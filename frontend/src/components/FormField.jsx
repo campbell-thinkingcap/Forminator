@@ -1,6 +1,16 @@
 import React from 'react';
 
 const FormField = ({ label, type, value, onChange, onFocus, description, schema, required }) => {
+  if (schema.format === 'uuid') {
+    return (
+      <div className="form-group">
+        <label>{label}</label>
+        {description && <p className="description">{description}</p>}
+        <div className="uuid-display">{value || <span className="uuid-placeholder">auto-assigned</span>}</div>
+      </div>
+    );
+  }
+
   const handleChange = (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     onChange(type === 'integer' || type === 'number' ? Number(val) : val);
