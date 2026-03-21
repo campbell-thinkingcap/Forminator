@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 function highlight(json) {
   const escaped = json
@@ -20,16 +20,53 @@ function highlight(json) {
   );
 }
 
-const JsonHighlight = ({ value }) => {
-  const lines = highlight(JSON.stringify(value, null, 2)).split('\n');
+function findBlockRange(rawLines, key) {
+  const searchFor = `"${key}":`;
+  const startIdx = rawLines.findIndex(line => line.includes(searchFor));
+  if (startIdx === -1) return null;
+
+  let depth = 0;
+  for (let i = startIdx; i < rawLines.length; i++) {
+    const stripped = rawLines[i].replace(/"(?:[^"\\]|\\.)*"/g, '""');
+    for (const ch of stripped) {
+      if (ch === '{' || ch === '[') depth++;
+      if (ch === '}' || ch === ']') depth--;
+    }
+    if (i === startIdx && depth === 0) return [startIdx, startIdx];
+    if (i > startIdx && depth <= 0)   return [startIdx, i];
+  }
+  return [startIdx, startIdx];
+}
+
+const JsonHighlight = ({ value, activeKey }) => {
+  const activeLineRef = useRef(null);
+  const json = JSON.stringify(value, null, 2);
+  const rawLines = json.split('\n');
+  const htmlLines = highlight(json).split('\n');
+  const range = activeKey ? findBlockRange(rawLines, activeKey) : null;
+
+  useEffect(() => {
+    if (activeLineRef.current) {
+      activeLineRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [activeKey]);
+
   return (
     <pre className="json-highlight">
-      {lines.map((line, i) => (
-        <div key={i} className="jh-line">
-          <span className="jh-ln">{i + 1}</span>
-          <span dangerouslySetInnerHTML={{ __html: line || ' ' }} />
-        </div>
-      ))}
+      {htmlLines.map((line, i) => {
+        const isActive = range && i >= range[0] && i <= range[1];
+        const isFirst  = range && i === range[0];
+        return (
+          <div
+            key={i}
+            ref={isFirst ? activeLineRef : null}
+            className={`jh-line${isActive ? ' jh-active' : ''}`}
+          >
+            <span className="jh-ln">{i + 1}</span>
+            <span dangerouslySetInnerHTML={{ __html: line || ' ' }} />
+          </div>
+        );
+      })}
     </pre>
   );
 };

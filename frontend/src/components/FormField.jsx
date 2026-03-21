@@ -1,6 +1,6 @@
 import React from 'react';
 
-const FormField = ({ label, type, value, onChange, description, schema, required }) => {
+const FormField = ({ label, type, value, onChange, onFocus, description, schema, required }) => {
   const handleChange = (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     onChange(type === 'integer' || type === 'number' ? Number(val) : val);
@@ -9,7 +9,7 @@ const FormField = ({ label, type, value, onChange, description, schema, required
   const renderInput = () => {
     if (schema.enum) {
       return (
-        <select value={value || ''} onChange={handleChange}>
+        <select value={value || ''} onChange={handleChange} onFocus={onFocus}>
           <option value="" disabled>Select {label}...</option>
           {schema.enum.map(option => (
             <option key={option} value={option || ''}>{option || 'None'}</option>
@@ -22,10 +22,11 @@ const FormField = ({ label, type, value, onChange, description, schema, required
       case 'boolean':
         return (
           <div className="checkbox-group">
-            <input 
-              type="checkbox" 
-              checked={!!value} 
-              onChange={handleChange} 
+            <input
+              type="checkbox"
+              checked={!!value}
+              onChange={handleChange}
+              onFocus={onFocus}
               id={label}
             />
             <label htmlFor={label} style={{ margin: 0 }}>{label}</label>
@@ -33,9 +34,9 @@ const FormField = ({ label, type, value, onChange, description, schema, required
         );
       case 'integer':
       case 'number':
-        return <input type="number" value={value || ''} onChange={handleChange} />;
+        return <input type="number" value={value || ''} onChange={handleChange} onFocus={onFocus} />;
       default:
-        return <input type="text" value={value || ''} onChange={handleChange} />;
+        return <input type="text" value={value || ''} onChange={handleChange} onFocus={onFocus} />;
     }
   };
 

@@ -2,7 +2,7 @@ import React from 'react';
 import FormField from './FormField';
 import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
-const DynamicForm = ({ schema, data = {}, onChange }) => {
+const DynamicForm = ({ schema, data = {}, onChange, onFieldFocus }) => {
   if (!schema || !schema.properties) return null;
 
   const handleFieldChange = (key, value) => {
@@ -21,10 +21,11 @@ const DynamicForm = ({ schema, data = {}, onChange }) => {
             {key.charAt(0).toUpperCase() + key.slice(1)}
           </h3>
           {propSchema.description && <p className="description">{propSchema.description}</p>}
-          <DynamicForm 
-            schema={propSchema} 
-            data={value || {}} 
-            onChange={(subData) => handleFieldChange(key, subData)} 
+          <DynamicForm
+            schema={propSchema}
+            data={value || {}}
+            onChange={(subData) => handleFieldChange(key, subData)}
+            onFieldFocus={onFieldFocus}
           />
         </div>
       );
@@ -32,7 +33,7 @@ const DynamicForm = ({ schema, data = {}, onChange }) => {
 
     if (propSchema.type === 'array') {
       const items = Array.isArray(value) ? value : [];
-      
+
       const handleAdd = () => {
         const newItem = propSchema.items.type === 'object' ? {} : '';
         handleFieldChange(key, [...items, newItem]);
@@ -52,30 +53,32 @@ const DynamicForm = ({ schema, data = {}, onChange }) => {
         <div key={key} className="form-group">
           <label>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
           {propSchema.description && <p className="description">{propSchema.description}</p>}
-          
+
           <div style={{ marginLeft: '1rem' }}>
             {items.map((item, index) => (
               <div key={index} className="array-item">
-                <button 
-                  className="remove-btn" 
+                <button
+                  className="remove-btn"
                   onClick={() => handleRemove(index)}
                   title="Remove item"
                 >
                   <Trash2 size={14} />
                 </button>
-                
+
                 {propSchema.items.type === 'object' ? (
-                  <DynamicForm 
-                    schema={propSchema.items} 
-                    data={item} 
-                    onChange={(val) => handleItemChange(index, val)} 
+                  <DynamicForm
+                    schema={propSchema.items}
+                    data={item}
+                    onChange={(val) => handleItemChange(index, val)}
+                    onFieldFocus={onFieldFocus}
                   />
                 ) : (
-                  <FormField 
+                  <FormField
                     label={`Item ${index + 1}`}
                     type={propSchema.items.type}
                     value={item}
                     onChange={(val) => handleItemChange(index, val)}
+                    onFocus={() => onFieldFocus?.(key)}
                     schema={propSchema.items}
                   />
                 )}
@@ -90,8 +93,8 @@ const DynamicForm = ({ schema, data = {}, onChange }) => {
     }
 
     // Determine type (handling array types like ["string", "null"])
-    const actualType = Array.isArray(propSchema.type) 
-      ? propSchema.type.find(t => t !== 'null') 
+    const actualType = Array.isArray(propSchema.type)
+      ? propSchema.type.find(t => t !== 'null')
       : propSchema.type;
 
     return (
@@ -101,6 +104,7 @@ const DynamicForm = ({ schema, data = {}, onChange }) => {
         type={actualType}
         value={value}
         onChange={(val) => handleFieldChange(key, val)}
+        onFocus={() => onFieldFocus?.(key)}
         description={propSchema.description}
         schema={propSchema}
         required={isRequired}

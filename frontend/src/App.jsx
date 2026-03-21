@@ -14,6 +14,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [splitPercent, setSplitPercent] = useState(60);
+  const [activeField, setActiveField] = useState(null);
   const workspaceRef = useRef(null);
 
   const onResizerMouseDown = useCallback((e) => {
@@ -116,6 +117,7 @@ function App() {
                   schema={schema}
                   data={formData}
                   onChange={handleFormChange}
+                  onFieldFocus={setActiveField}
                 />
               </div>
 
@@ -141,7 +143,7 @@ function App() {
           </div>
           <div className="schema-panel-body">
             {schema ? (
-              <JsonHighlight value={schema} />
+              <JsonHighlight value={schema} activeKey={activeField} />
             ) : (
               <span className="schema-panel-empty">No schema loaded</span>
             )}

@@ -148,6 +148,7 @@ body {
 
 .json-highlight { color: #94a3b8; display: block; }
 .jh-line        { display: flex; }
+.jh-active      { background: rgba(99, 102, 241, 0.15); border-left: 2px solid var(--primary); }
 .jh-ln          { min-width: 2.5rem; padding-right: 1rem; text-align: right; color: #334155; user-select: none; flex-shrink: 0; }
 .jh-key        { color: #818cf8; }
 .jh-string     { color: #10b981; }
