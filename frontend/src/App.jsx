@@ -1,0 +1,115 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import DynamicForm from './components/DynamicForm';
+import { Settings, Code, FileJson, AlertCircle } from 'lucide-react';
+
+const API_BASE = 'http://localhost:3001/api';
+
+function App() {
+  const [schemas, setSchemas] = useState([]);
+  const [selectedSchemaName, setSelectedSchemaName] = useState('');
+  const [schema, setSchema] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchSchemas();
+  }, []);
+
+  const fetchSchemas = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/schemas`);
+      setSchemas(res.data);
+      if (res.data.length > 0) {
+        handleSchemaSelect(res.data[0].name);
+      }
+    } catch (err) {
+      setError('Failed to connect to backend server.');
+    }
+  };
+
+  const handleSchemaSelect = async (name) => {
+    setLoading(true);
+    setSelectedSchemaName(name);
+    try {
+      const res = await axios.get(`${API_BASE}/schemas/${name}`);
+      setSchema(res.data);
+      setFormData({}); // Reset form
+      setError(null);
+    } catch (err) {
+      setError('Failed to load schema.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormChange = (newData) => {
+    setFormData(newData);
+  };
+
+  return (
+    <div className="container">
+      <header className="fade-in">
+        <h1>Forminator</h1>
+        <p className="subtitle">Dynamic Form Generator based on JSON Schema</p>
+      </header>
+
+      <div className="card fade-in" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <FileJson size={24} color="#818cf8" />
+          <select 
+            value={selectedSchemaName} 
+            onChange={(e) => handleSchemaSelect(e.target.value)}
+            style={{ maxWidth: '300px' }}
+          >
+            <option value="" disabled>Select a schema...</option>
+            {schemas.map(s => (
+              <option key={s.name} value={s.name}>{s.name}.json</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {error && (
+        <div className="card fade-in" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#ef4444' }}>
+            <AlertCircle size={20} />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="loader">Loading Schema...</div>
+        </div>
+      ) : schema ? (
+        <div className="fade-in">
+          <div className="card">
+            <h2 style={{ marginBottom: '0.5rem' }}>{schema.title}</h2>
+            <p className="description" style={{ marginBottom: '2rem' }}>{schema.description}</p>
+            
+            <DynamicForm 
+              schema={schema} 
+              data={formData} 
+              onChange={handleFormChange} 
+            />
+          </div>
+
+          <div className="json-preview fade-in">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#94a3b8' }}>
+              <Code size={18} />
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Generated JSON Output</span>
+            </div>
+            <pre>{JSON.stringify(formData, null, 2)}</pre>
+          </div>
+        </div>
+      ) : (
+        !error && <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Select a schema to begin</div>
+      )}
+    </div>
+  );
+}
+
+export default App;

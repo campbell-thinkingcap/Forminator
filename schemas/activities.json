@@ -1,0 +1,1197 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "settings-activities",
+    "title": "Settings > Activities",
+    "description": "Branch-level activity template configuration. Single document per branch spanning three panels: Presets (default settings auto-applied to new learning activities), Wizard (steps shown in activity creation wizard), and Exclusions (settings hidden from activity editing UIs). Primary tables: ActivityTemplates, LearningObjectWizardSettings, LearningObjectHideSettings.",
+    "type": "object",
+    "documentType": "single",
+    "scope": "branch",
+    "properties": {
+        "defaults": {
+            "type": "array",
+            "description": "Activity defaults — saved default settings that are automatically applied when a new learning activity of the matching type is created. Each entry corresponds to one row in the ActivityTemplates table. A branch may have multiple defaults of the same TemplateType if they apply to different activity types.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Client name for TCOV display context (e.g. 'CoxCampus')."
+                    },
+                    "branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch name for TCOV display context."
+                    },
+                    "branchId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch ID (uppercase GUID) for TCOV display context."
+                    },
+                    "templateId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Primary key. DB: ActivityTemplates.TemplateID uniqueidentifier."
+                    },
+                    "templateType": {
+                        "type": "string",
+                        "description": "Identifies which setting panel this preset configures. Determines which type-specific fields are populated. DB: ActivityTemplates.TemplateType varchar(max).",
+                        "enum": [
+                            "Access Code",
+                            "Activity Connections",
+                            "Auto Enrollment",
+                            "Auto Withdrawal",
+                            "Certificates",
+                            "Chat",
+                            "Completion / Weighting",
+                            "Connect Users",
+                            "Convert PDF course packages to HTML 5",
+                            "Course Language",
+                            "Disclaimer",
+                            "Display Options",
+                            "Equivalencies",
+                            "Estimated Learning Time",
+                            "Feedback Survey",
+                            "Forums",
+                            "General Enrollment Options",
+                            "Learner Attestation Details",
+                            "Learner Notes",
+                            "Learner View Visibility",
+                            "Learning Activity Rating",
+                            "Notifications",
+                            "Open Badge",
+                            "Pricing Settings",
+                            "Passes",
+                            "Prerequisites",
+                            "Proctor Attestation Details",
+                            "Proxy Course Files",
+                            "Recommendations",
+                            "Roster: Duplicates",
+                            "Roster: Overwrite Data",
+                            "Self Enrollment",
+                            "Session Options",
+                            "Sharing",
+                            "Sign Off Rules",
+                            "Video Settings",
+                            "Volume Discount",
+                            "Withdrawal"
+                        ]
+                    },
+                    "learningObjectTypes": {
+                        "type": "array",
+                        "description": "The activity types this preset applies to. Values are either standard activity type names or custom activity type UUIDs. DB: ActivityTemplates.LearningobjectTypes varchar(max), stored as comma-separated string.",
+                        "items": {
+                            "type": "string",
+                            "description": "Standard activity type name (e.g. 'eLearning Course') or a custom activity type UUID (e.g. '9945cb8a-85e7-448f-8191-04c64ebb77b3')."
+                        },
+                        "examples": [
+                            [
+                                "eLearning Course",
+                                "Instructor Led Training",
+                                "Learning Path"
+                            ],
+                            [
+                                "Instructor Led Training"
+                            ],
+                            [
+                                "9945cb8a-85e7-448f-8191-04c64ebb77b3"
+                            ]
+                        ]
+                    },
+                    "allowOverride": {
+                        "type": "boolean",
+                        "description": "When true, child branches and activity authors can override this preset. DB: ActivityTemplates.AllowOverride bit."
+                    },
+                    "notAllowOverridingChilds": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Comma-separated list of child branch IDs that are NOT allowed to override this preset (locked for those branches). DB: ActivityTemplates.NotAllowOverridingChilds nvarchar(max)."
+                    },
+                    "allowOverrideDisabledChilds": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Comma-separated list of child branch IDs where override is explicitly disabled. DB: ActivityTemplates.AllowOverRideDisabledChilds nvarchar(max)."
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "HTML summary of the configured settings, shown in the preset list UI. Generated by the system when saving. DB: ActivityTemplates.Description varchar(max)."
+                    },
+                    "isShared": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Whether this preset is shared to child branches. DB: ActivityTemplates.IsShared bit. Applies to templateType: 'Sharing'."
+                    },
+                    "accessCode": {
+                        "type": "object",
+                        "description": "Access code settings. Applies to templateType: 'Access Code'. DB columns: IsAccesscode (bit), Accesscode (nvarchar 50).",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether an access code is required. DB: ActivityTemplates.IsAccesscode bit."
+                            },
+                            "code": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 50,
+                                "description": "The access code value. DB: ActivityTemplates.Accesscode nvarchar(50)."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "chat": {
+                        "type": "object",
+                        "description": "Chat settings. Applies to templateType: 'Chat'. DB: ActivityTemplates.hasChat bit.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether chat is enabled. DB: ActivityTemplates.hasChat bit."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "convertPdfToHtml": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Convert PDF course packages to HTML5. Applies to templateType: 'Convert PDF course packages to HTML 5'. DB: ActivityTemplates.ConvertPDFtoHTML bit."
+                    },
+                    "courseLanguage": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2,
+                        "description": "Two-character language code for the course language. Applies to templateType: 'Course Language'. DB: ActivityTemplates.language varchar(2). e.g. 'en', 'fr'."
+                    },
+                    "disclaimer": {
+                        "type": "object",
+                        "description": "Disclaimer settings. Applies to templateType: 'Disclaimer'. DB columns: hasDisclaimer (bit), DisclaimerText (varchar max), DisclaimerTextButton (varchar max), ShowDisclaimerAlways (bit).",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether a disclaimer is shown. DB: ActivityTemplates.hasDisclaimer bit."
+                            },
+                            "text": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Disclaimer text content. DB: ActivityTemplates.DisclaimerText varchar(max)."
+                            },
+                            "buttonText": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Custom text for the disclaimer acceptance button. DB: ActivityTemplates.DisclaimerTextButton varchar(max)."
+                            },
+                            "showAlways": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, disclaimer is shown every time the activity is launched, not just the first time. DB: ActivityTemplates.ShowDisclaimerAlways bit."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "displayOptions": {
+                        "type": "object",
+                        "description": "Display/launch options. Applies to templateType: 'Display Options'. DB columns: ClassroomTemplate, ClassroomHeight, ClassroomWidth, IECompatibilityMode, AllowModal, OpenCourseIn, exclusionmode, LpDetailsLayoutMode, ShowLearnerProgressAs, ShowSharingLink.",
+                        "properties": {
+                            "classroomTemplateId": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "format": "uuid",
+                                "description": "GUID of the classroom template (custom launch page layout). DB: ActivityTemplates.ClassroomTemplate uniqueidentifier."
+                            },
+                            "classroomWidth": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "description": "Width in pixels for the course launch window. DB: ActivityTemplates.ClassroomWidth int."
+                            },
+                            "classroomHeight": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "description": "Height in pixels for the course launch window. DB: ActivityTemplates.ClassroomHeight int."
+                            },
+                            "forceIECompatibilityMode": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "Force Internet Explorer compatibility mode on launch. DB: ActivityTemplates.IECompatibilityMode bit."
+                            },
+                            "allowModal": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "Allow the course to launch in a modal window. DB: ActivityTemplates.AllowModal bit."
+                            },
+                            "openCourseIn": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 30,
+                                "description": "How the course opens. DB: ActivityTemplates.OpenCourseIn varchar(30). e.g. 'NewWindow', 'SameWindow', 'Modal'."
+                            },
+                            "exclusionMode": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Learner view exclusion/visibility mode. DB: ActivityTemplates.exclusionmode varchar(max)."
+                            },
+                            "lpDetailsLayoutMode": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 50,
+                                "description": "Learning path details layout style. DB: ActivityTemplates.LpDetailsLayoutMode nvarchar(50)."
+                            },
+                            "showLearnerProgressAs": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 50,
+                                "description": "How learner progress is displayed in LP (e.g. percentage, items count). DB: ActivityTemplates.ShowLearnerProgressAs nvarchar(50)."
+                            },
+                            "showSharingLink": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "Show a sharing link on the activity details page. DB: ActivityTemplates.ShowSharingLink bit."
+                            }
+                        }
+                    },
+                    "equivalencies": {
+                        "type": "object",
+                        "description": "Equivalency group settings. Applies to templateType: 'Equivalencies'. DB: ActivityTemplates.SeriesID uniqueidentifier.",
+                        "properties": {
+                            "seriesId": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "format": "uuid",
+                                "description": "GUID of the equivalency series/group this activity belongs to. DB: ActivityTemplates.SeriesID uniqueidentifier."
+                            }
+                        }
+                    },
+                    "estimatedLearningTime": {
+                        "type": "object",
+                        "description": "Estimated time to complete. Applies to templateType: 'Estimated Learning Time'. DB: ActivityTemplates.LearningTime float.",
+                        "properties": {
+                            "hours": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "description": "Estimated learning time in hours (decimal). DB: ActivityTemplates.LearningTime float."
+                            }
+                        }
+                    },
+                    "forums": {
+                        "type": "object",
+                        "description": "Forum settings. Applies to templateType: 'Forums'. DB: ActivityTemplates.hasForum bit.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether a forum is attached to the activity. DB: ActivityTemplates.hasForum bit."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "learnerNotes": {
+                        "type": "object",
+                        "description": "Learner notes settings. Applies to templateType: 'Learner Notes'. DB: ActivityTemplates.AllowLearnerNotes bit.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Allow learners to take notes within the activity. DB: ActivityTemplates.AllowLearnerNotes bit."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "learningActivityRating": {
+                        "type": "object",
+                        "description": "Rating/recommendation settings. Applies to templateType: 'Learning Activity Rating'. DB: ActivityTemplates.ShowRecommendation bit.",
+                        "properties": {
+                            "showRecommendation": {
+                                "type": "boolean",
+                                "description": "Show the 'recommend this activity' option to learners. DB: ActivityTemplates.ShowRecommendation bit."
+                            }
+                        },
+                        "required": [
+                            "showRecommendation"
+                        ]
+                    },
+                    "proxyAzure": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Proxy course files through Azure. Applies to templateType: 'Proxy Course Files'. DB: ActivityTemplates.ProxyAzure bit."
+                    },
+                    "rosterDuplicateAsSeparate": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Treat roster duplicate entries as separate completions. Applies to templateType: 'Roster: Duplicates'. DB: ActivityTemplates.rosterDuplicateAsSeperate bit."
+                    },
+                    "rosterAllowOverwriteData": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Allow roster imports to overwrite existing completion data. Applies to templateType: 'Roster: Overwrite Data'. DB: ActivityTemplates.RosterAllowOverwriteData bit."
+                    },
+                    "activityConnections": {
+                        "type": "object",
+                        "description": "Activity Connections settings. Applies to templateType: 'Activity Connections'. Enables the activity connections feature for the selected learning activity types — allows LMS users and external contacts to be connected to an activity in named roles. No type-specific columns in ActivityTemplates; only learningObjectTypes is used. UI: Admin/ActivityTemplates/ConnectedUsers.aspx.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether activity connections are enabled. Presence of a template row with this type for a given activity type indicates the feature is active."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "autoEnrollment": {
+                        "type": "object",
+                        "description": "Auto enrollment settings. Applies to templateType: 'Auto Enrollment'. Configures rules-based automatic enrollment for matching learners. Rules (inclusion and exclusion) are stored in the CourseAutoenrollrules table, keyed to the TemplateID. DB: Course.AutoEnroll (bit), Course.AutoenrollRulesRequired (bit), Course.AutoenrollExcludeRulesRequired (bit), Course.AutoenrollRepeatType (varchar), Course.AutoenrollRepeatMonthCount (varchar). UI: Admin/ActivityTemplates/AutoEnrollmentOptions.aspx.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether auto-enrollment is active. DB: Course.AutoEnroll bit."
+                            },
+                            "repeatType": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "How often auto-enrollment recurs. DB: Course.AutoenrollRepeatType varchar. Values: 'Monthly', 'Weekly', 'Quarterly', 'BiWeekly', 'DailyNoRules'.",
+                                "enum": [
+                                    "Monthly",
+                                    "Weekly",
+                                    "Quarterly",
+                                    "BiWeekly",
+                                    "DailyNoRules",
+                                    null
+                                ]
+                            },
+                            "repeatMonthCount": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Number of months between recurring auto-enrollments (used when repeatType is 'Monthly'). DB: Course.AutoenrollRepeatMonthCount varchar."
+                            },
+                            "rulesRequired": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, all inclusion rules must match (AND logic). When false, any rule match is sufficient (OR logic). DB: Course.AutoenrollRulesRequired bit."
+                            },
+                            "exclusionRulesRequired": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, all exclusion rules must match to exclude a learner (AND logic). When false, any exclusion rule match is sufficient (OR logic). DB: Course.AutoenrollExcludeRulesRequired bit."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "autoWithdrawal": {
+                        "type": "object",
+                        "description": "Auto withdrawal settings. Applies to templateType: 'Auto Withdrawal'. Configures rules-based automatic withdrawal for learners who no longer match criteria. Rules (inclusion and exclusion) are stored in the CourseAutoenrollrules table keyed to TemplateID with type AutoWithdrawal/AutoWithdrawalExclusion. DB: Course.AutoWithdraw (bit), Course.AutoWithdrawNotMatchingAutoRules (bit), Course.AutoWithdrawalExcludeRulesRequired (bit). UI: Admin/ActivityTemplates/AutoWithdrawalEnrollmentOptions.aspx.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether auto-withdrawal is active. DB: Course.AutoWithdraw bit."
+                            },
+                            "withdrawNotMatchingRules": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, learners are automatically withdrawn if they no longer match the auto-enrollment rules. DB: Course.AutoWithdrawNotMatchingAutoRules bit."
+                            },
+                            "exclusionRulesRequired": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, all exclusion rules must match to exclude a learner from auto-withdrawal (AND logic). DB: Course.AutoWithdrawalExcludeRulesRequired bit."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "withdrawal": {
+                        "type": "object",
+                        "description": "Withdrawal (self-unenroll) settings. Applies to templateType: 'Withdrawal'. Configures whether and how learners may withdraw themselves from an activity. Withdrawal rules (inclusion and exclusion) are stored in the CourseAutoenrollrules table keyed to TemplateID with type Withdrawal/WithdrawalExclusion. DB: Course.CanUnenroll (bit), Course.WithdrawAllDomainMembers (bit), Course.UnenrollOption (varchar), Course.UnenrollPermissionFrom (varchar), Course.WithdrawalRulesRequired (bit), Course.WithdrawalExcludeRulesRequired (bit). UI: Admin/ActivityTemplates/WithdrawalEnrollmentOptions.aspx.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether learner self-withdrawal is permitted. DB: Course.CanUnenroll bit."
+                            },
+                            "allowAllBranchMembers": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, all branch members may withdraw without matching rules. When false, withdrawal is restricted to learners matching the withdrawal rules. DB: Course.WithdrawAllDomainMembers bit."
+                            },
+                            "withdrawalTiming": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "When withdrawal is permitted. DB: Course.UnenrollOption varchar. Values: 'anytime' (learner can withdraw at any time), 'beforeStart' (only before the activity start date).",
+                                "enum": [
+                                    "anytime",
+                                    "beforeStart",
+                                    null
+                                ]
+                            },
+                            "permissionFrom": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Comma-separated list of permission role IDs whose approval is required before the withdrawal takes effect. DB: Course.UnenrollPermissionFrom varchar."
+                            },
+                            "rulesRequired": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, all withdrawal inclusion rules must match (AND logic). DB: Course.WithdrawalRulesRequired bit."
+                            },
+                            "exclusionRulesRequired": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "When true, all withdrawal exclusion rules must match (AND logic). DB: Course.WithdrawalExcludeRulesRequired bit."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "volumeDiscount": {
+                        "type": "object",
+                        "description": "Volume Discount settings. Applies to templateType: 'Volume Discount'. Configures tiered/volume pricing discounts for commerce-enabled learning activities. Defined in sitemap (Admin/ActivityTemplates/VolumeDiscountSettings.aspx) but implementation page not yet found in codebase — treat as a planned or newly shipped feature. Only shown when a payment gateway is configured for the branch.",
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Whether volume discount rules are active for the selected activity types."
+                            }
+                        },
+                        "required": [
+                            "enabled"
+                        ]
+                    },
+                    "signOffRules": {
+                        "type": "object",
+                        "description": "Sign-off / supervisor approval rules. Applies to templateType: 'Sign Off Rules'. Used for Demonstration, Comprehension, Portfolio activities. DB columns: IsPortfolioEvidence (bit), IsCompletedTrainingDate (bit), DisableSupervisorSignOff (bit), Instructions (varchar max).",
+                        "properties": {
+                            "isPortfolioEvidence": {
+                                "type": "boolean",
+                                "description": "Treat completed items as portfolio evidence. DB: ActivityTemplates.IsPortfolioEvidence bit."
+                            },
+                            "isCompletedTrainingDate": {
+                                "type": "boolean",
+                                "description": "Use the completed training date as the sign-off date. DB: ActivityTemplates.IsCompletedTrainingDate bit."
+                            },
+                            "disableSupervisorSignOff": {
+                                "type": "boolean",
+                                "description": "Disable the supervisor sign-off requirement. DB: ActivityTemplates.DisableSupervisorSignOff bit."
+                            },
+                            "instructions": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Instructions shown to the supervisor/reviewer. DB: ActivityTemplates.Instructions varchar(max)."
+                            }
+                        },
+                        "required": [
+                            "isPortfolioEvidence",
+                            "isCompletedTrainingDate",
+                            "disableSupervisorSignOff"
+                        ]
+                    }
+                },
+                "required": [
+                    "templateId",
+                    "templateType",
+                    "learningObjectTypes",
+                    "allowOverride"
+                ]
+            }
+        },
+        "wizardSteps": {
+            "type": "array",
+            "description": "Settings panels displayed as steps in the activity creation wizard. Each entry corresponds to one row in the LearningObjectWizardSettings table. The wizard shows these steps in order when a new activity is created.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Client name for TCOV display context."
+                    },
+                    "branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch name for TCOV display context."
+                    },
+                    "branchId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch ID (uppercase GUID) for TCOV display context."
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Primary key. DB: LearningObjectWizardSettings.ID uniqueidentifier."
+                    },
+                    "order": {
+                        "type": "integer",
+                        "description": "Display order of this wizard step. DB: LearningObjectWizardSettings.Order int NOT NULL."
+                    },
+                    "settingType": {
+                        "type": "string",
+                        "description": "The settings panel shown at this wizard step. Same value set as preset templateType. DB: LearningObjectWizardSettings.SettingType varchar(max)."
+                    },
+                    "learningObjectTypes": {
+                        "type": "array",
+                        "description": "Activity types for which this wizard step is shown. Values are standard activity type names or custom type UUIDs. DB: LearningObjectWizardSettings.LearningobjectTypes varchar(max), stored as comma-separated string.",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "order",
+                    "settingType",
+                    "learningObjectTypes"
+                ]
+            }
+        },
+        "exclusions": {
+            "type": "array",
+            "description": "Settings panels hidden from activity editing UIs (excluded from the activity editor). Each entry corresponds to one row in the LearningObjectHideSettings table. Hidden settings are not shown to activity authors even if a preset exists.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Client name for TCOV display context."
+                    },
+                    "branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch name for TCOV display context."
+                    },
+                    "branchId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch ID (uppercase GUID) for TCOV display context."
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Primary key. DB: LearningObjectHideSettings.ID uniqueidentifier."
+                    },
+                    "settingType": {
+                        "type": "string",
+                        "description": "The settings panel to hide. Same value set as preset templateType, plus additional UI-only fields. DB: LearningObjectHideSettings.SettingType varchar(max).",
+                        "examples": [
+                            "Enhanced Security",
+                            "Chat",
+                            "Threshold",
+                            "Learner View Visibility",
+                            "Enrollment Options",
+                            "Marquee",
+                            "Course Language",
+                            "Estimated Learning Time",
+                            "Equivalencies",
+                            "Coupons",
+                            "Prerequisites",
+                            "Sample",
+                            "Assessment Questions",
+                            "Learner Notes",
+                            "Reference Materials - Link",
+                            "Reference Materials - Book",
+                            "Reference Materials - Document",
+                            "Reference Materials - Media",
+                            "Reference Materials - Hide from Learner View",
+                            "Convert PDF course packages to HTML 5",
+                            "Open Badge",
+                            "Roster: Duplicates",
+                            "Roster: Overwrite Data",
+                            "Learning Activity Rating",
+                            "Access Code",
+                            "Recommendations"
+                        ]
+                    },
+                    "learningObjectTypes": {
+                        "type": "array",
+                        "description": "Activity types for which this setting is hidden. Empty array means hidden for all types. Values are standard activity type names or custom type UUIDs. DB: LearningObjectHideSettings.LearningobjectTypes varchar(max), stored as comma-separated string.",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "settingType",
+                    "learningObjectTypes"
+                ]
+            }
+        },
+        "customActivityTypes": {
+            "type": "array",
+            "description": "Custom activity types defined for this branch. These extend the standard set of activity types and their IDs (UUIDs) may appear in learningObjectTypes fields above. DB: ActivityCustomTypes table, filtered by DomainID = branch ProgramID.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Client name for TCOV display context."
+                    },
+                    "branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch name for TCOV display context."
+                    },
+                    "branchId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch ID (uppercase GUID) for TCOV display context."
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Primary key. DB: ActivityCustomTypes.ID uniqueidentifier."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Display name of the custom activity type. DB: ActivityCustomTypes.Name nvarchar(max)."
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Description of the custom activity type. DB: ActivityCustomTypes.Description nvarchar(max)."
+                    },
+                    "baseActivityType": {
+                        "type": "string",
+                        "description": "The standard activity type this custom type is based on. DB: ActivityCustomTypes.ActivityType nvarchar(max).",
+                        "enum": [
+                            "course",
+                            "iled",
+                            "lp",
+                            "assessment",
+                            "demonstration",
+                            "comprehension",
+                            "portfolio",
+                            "survey",
+                            "assignment",
+                            "attestation",
+                            "attestationnew"
+                        ]
+                    },
+                    "nameXml": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Multi-language name definitions as XML. DB: ActivityCustomTypes.NameXML nvarchar(max). Format: <names><name language='en'>...</name></names>."
+                    },
+                    "simplifiedForActionPlans": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Show simplified view when used in action plans. DB: ActivityCustomTypes.SimplifiedForActionPlans bit."
+                    },
+                    "availableForPersonalPaths": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Allow this type to be used in personal learning paths. DB: ActivityCustomTypes.AvailableForPersonalPaths bit."
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "baseActivityType"
+                ]
+            }
+        },
+        "general": {
+            "type": [
+                "object",
+                "array"
+            ],
+            "description": "General activity type settings for the branch. In sample data shown as an array (one entry per branch). Controls which learning activity types are enabled, code auto-generation, child branch restrictions, learner withdrawal behaviour, and the activity explorer display configuration. UI: Admin/ActivityTemplates/ActivityTypes.aspx. Data stored in Program table columns.",
+            "properties": {
+                "allowedActivityTypes": {
+                    "type": "array",
+                    "description": "The learning activity types enabled for this branch. Standard type names or custom type UUIDs. Only enabled types appear in the activity creation UI.",
+                    "items": {
+                        "type": "string",
+                        "description": "Standard activity type name (e.g. 'eLearning Course') or custom activity type UUID."
+                    }
+                },
+                "generateActivityCode": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "description": "Automatically generate a unique code when a new learning activity is created. DB: Program.GenerateLearningActivitiesCode bit."
+                },
+                "allowOverrideActivityCode": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "description": "Allow activity authors to manually override the auto-generated code. DB: Program.AllowOverrideLearningActivitiesCode bit."
+                },
+                "denyChildLearningObjects": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "description": "Prevent child branches from creating their own learning activities (they may only use inherited ones). DB: Program.DenyChildLearningObjects bit."
+                },
+                "withdrawInactiveLearners": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "description": "Automatically withdraw learners from activities when their account becomes inactive. DB: Program.WithdrawInactiveLearners bit."
+                },
+                "explorerFilters": {
+                    "type": "object",
+                    "description": "Default filter selections shown in the activity explorer/catalog list.",
+                    "properties": {
+                        "statusFilters": {
+                            "type": "array",
+                            "description": "Which status filter checkboxes are checked by default. e.g. ['active', 'inactive', 'pastilt'].",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "active",
+                                    "inactive",
+                                    "pastilt"
+                                ]
+                            }
+                        },
+                        "originFilters": {
+                            "type": "array",
+                            "description": "Which origin filter checkboxes are checked by default. e.g. ['local', 'parent', 'shared'].",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "local",
+                                    "parent",
+                                    "shared"
+                                ]
+                            }
+                        },
+                        "hideFiltersPanel": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ],
+                            "description": "Collapse/hide the filters panel in the explorer by default."
+                        }
+                    }
+                },
+                "explorerSort": {
+                    "type": "object",
+                    "description": "Default sort applied to the activity explorer list.",
+                    "properties": {
+                        "sortColumn": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "description": "Column to sort by. e.g. 'title', 'type', 'code', 'startdate'.",
+                            "enum": [
+                                "title",
+                                "type",
+                                "code",
+                                "startdate",
+                                null
+                            ]
+                        },
+                        "sortOrder": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "description": "Sort direction. e.g. 'ascending', 'descending'.",
+                            "enum": [
+                                "ascending",
+                                "descending",
+                                null
+                            ]
+                        }
+                    }
+                }
+            },
+            "required": [
+                "allowedActivityTypes"
+            ]
+        },
+        "externalActivities": {
+            "type": "array",
+            "description": "External activity configuration for this branch. Defines which external (off-system) activity types learners can self-report, with credit and approval rules. Each entry corresponds to one row in the ExternalActivity table.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Client name for TCOV display context."
+                    },
+                    "branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch name for TCOV display context."
+                    },
+                    "branchId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch ID (uppercase GUID) for TCOV display context."
+                    },
+                    "activityId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Primary key. DB: ExternalActivity.ActivityID uniqueidentifier."
+                    },
+                    "programId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Branch this external activity belongs to. DB: ExternalActivity.ProgramID uniqueidentifier."
+                    },
+                    "activityType": {
+                        "type": "string",
+                        "description": "The type name of this external activity (e.g. 'Conference', 'Workshop'). DB: ExternalActivity.ActivityType nvarchar(max)."
+                    },
+                    "submitForCredit": {
+                        "type": "boolean",
+                        "description": "Whether submissions from learners are eligible for credit. DB: ExternalActivity.SubmitFORCredit bit."
+                    },
+                    "automaticApproval": {
+                        "type": "boolean",
+                        "description": "Approve submissions automatically without manager review. DB: ExternalActivity.AutomaticApproval bit."
+                    },
+                    "useCalendarYear": {
+                        "type": "boolean",
+                        "description": "Limit max reports per calendar year (vs. rolling 12 months). DB: ExternalActivity.UseCalenderYear bit."
+                    },
+                    "creditValue": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Credit value awarded per submission. DB: ExternalActivity.CreditValue decimal."
+                    },
+                    "maxReportsPerYear": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Maximum number of submissions a learner can make per year. DB: ExternalActivity.MaxReportsPerYear int."
+                    },
+                    "certificateType": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid",
+                        "description": "GUID of the certificate template issued on completion. DB: ExternalActivity.CertificateType uniqueidentifier."
+                    },
+                    "isDefault": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Whether this is the default external activity type for the branch. DB: ExternalActivity.isDefault bit."
+                    },
+                    "allowEditing": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Allow learners to edit their submission after it is submitted. DB: ExternalActivity.AllowEditing bit."
+                    },
+                    "approvalActive": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Whether the approval workflow is active for this activity type. DB: ExternalActivity.ApprovalActive bit."
+                    }
+                },
+                "required": [
+                    "activityId",
+                    "programId",
+                    "activityType",
+                    "submitForCredit",
+                    "automaticApproval",
+                    "useCalendarYear"
+                ]
+            }
+        },
+        "withdrawalReasons": {
+            "type": "array",
+            "description": "Reasons available when withdrawing a learner from a learning activity. Admins may choose from this list when performing a manual withdrawal. Each entry corresponds to one row in the DomainWithdrawalReasons table.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Client name for TCOV display context."
+                    },
+                    "branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch name for TCOV display context."
+                    },
+                    "branchId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch ID (uppercase GUID) for TCOV display context."
+                    },
+                    "reasonId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Primary key. DB: DomainWithdrawalReasons.ReasonID uniqueidentifier."
+                    },
+                    "domainId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Branch this reason belongs to. DB: DomainWithdrawalReasons.DomainID uniqueidentifier."
+                    },
+                    "reasonText": {
+                        "type": "string",
+                        "description": "Display text of the withdrawal reason shown in the UI. DB: DomainWithdrawalReasons.ReasonText nvarchar(max)."
+                    },
+                    "doNotInherit": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "When true, child branches do not inherit this reason. DB: DomainWithdrawalReasons.DoNotInherit bit."
+                    },
+                    "type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20,
+                        "description": "Category or origin of this reason (e.g. 'manual'). DB: DomainWithdrawalReasons.Type varchar(20)."
+                    }
+                },
+                "required": [
+                    "reasonId",
+                    "domainId",
+                    "reasonText"
+                ]
+            }
+        },
+        "marqueeDefaults": {
+            "type": "array",
+            "description": "Default marquee (thumbnail/logo) images assigned per activity type at the branch level. When a new activity of the given type is created, this image is used as its default marquee unless overridden. Each entry corresponds to one row in the ActivityDefaultMarquee table.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "client": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Client name for TCOV display context."
+                    },
+                    "branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch name for TCOV display context."
+                    },
+                    "branchId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Branch ID (uppercase GUID) for TCOV display context."
+                    },
+                    "id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid",
+                        "description": "Primary key. DB: ActivityDefaultMarquee.ID uniqueidentifier (nullable)."
+                    },
+                    "activityType": {
+                        "type": "string",
+                        "description": "Standard activity type name this default marquee applies to (e.g. 'eLearning Course'). DB: ActivityDefaultMarquee.ActivityType nvarchar(max)."
+                    },
+                    "customActivityId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50,
+                        "description": "UUID of the custom activity type this marquee applies to, if applicable. DB: ActivityDefaultMarquee.CustomActivityID nvarchar(50)."
+                    },
+                    "domainId": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "description": "Branch this default marquee belongs to. DB: ActivityDefaultMarquee.DomainID nvarchar(100)."
+                    },
+                    "marqueeUrl": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500,
+                        "description": "URL of the marquee image. DB: ActivityDefaultMarquee.MarqueeUrl nvarchar(500)."
+                    },
+                    "contentType": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50,
+                        "description": "MIME type of the marquee image (e.g. 'image/png', 'image/jpeg'). DB: ActivityDefaultMarquee.ContentType nvarchar(50)."
+                    }
+                },
+                "required": [
+                    "activityType",
+                    "domainId"
+                ]
+            }
+        }
+    },
+    "required": [
+        "defaults",
+        "wizardSteps",
+        "exclusions",
+        "customActivityTypes",
+        "general",
+        "externalActivities",
+        "withdrawalReasons",
+        "marqueeDefaults"
+    ],
+    "$defs": {
+        "standardActivityTypes": {
+            "description": "Standard built-in activity type names as used in learningObjectTypes fields.",
+            "enum": [
+                "eLearning Course",
+                "Instructor Led Training",
+                "Learning Path",
+                "Assignment",
+                "Assessment",
+                "Survey",
+                "Demonstration",
+                "Comprehension",
+                "Portfolio",
+                "Attestation",
+                "Attestation New"
+            ]
+        }
+    }
+}

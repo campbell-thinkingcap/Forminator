@@ -1,0 +1,168 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "settings-instructor-led-session-default",
+    "title": "Settings > Instructor Led > Session Default",
+    "description": "The per-branch default session template used by ThinkingCap when initialising new ILT sessions. Stored as a special CourseSession row with SessionName = 'SessionDefault' whose CourseID and SessionID both equal the branch's Program GUID. The only field configurable through the admin UI (Campus/Admin/SessionDefaults.aspx > Attendance Code tab) is attendanceCode; all other fields are set once at record-creation time and remain constant. A document exists for every branch that has ever opened the Session Defaults admin page.",
+    "type": "object",
+    "documentType": "single",
+    "scope": "branch",
+    "properties": {
+        "attendanceCode": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "Default attendance code pre-populated on new sessions for this branch. Learners enter this code to record their own attendance without manual facilitator action. Empty string or null means no default code is set. DB: CourseSession.AttendanceCode (nvarchar). UI: Campus/Admin/SessionDefaults.aspx > Attendance Code tab > Code field.",
+            "default": null,
+            "examples": [
+                "ABC123",
+                "TRAINING2024",
+                ""
+            ]
+        },
+        "locationType": {
+            "type": "string",
+            "enum": [
+                "Room",
+                "Virtual"
+            ],
+            "default": "Room",
+            "description": "Default location type for sessions in this branch. 'Room' = physical training room; 'Virtual' = web-based delivery (Zoom, Webex, etc.). Set at record-creation time. DB: CourseSession.LocationType varchar(50)."
+        },
+        "isTBD": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the session date and time are To Be Determined by default. Always true for the SessionDefault template — the date is never pre-set on the template itself. DB: CourseSession.IsTBD bit."
+        },
+        "isRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether sessions are marked required by default when created under this branch. Requires showSessionRequired to be enabled in generalSettings. DB: CourseSession.IsRequired bit."
+        },
+        "isMultipleDaysSession": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether new sessions default to spanning multiple days. When true, the session wizard shows a multi-day scheduling UI. DB: CourseSession.IsMultipleDaysSession bit."
+        },
+        "recordScore": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether sessions record a score for learners by default. When true, facilitators can enter a numeric score during attendance recording. DB: CourseSession.RecordScore bit."
+        },
+        "defaultLocation": {
+            "type": "object",
+            "description": "Default location details applied to the session template. Stored in SessionLocationDetails joined to the SessionDefault row via CourseSession.LocationID. In all observed data the room is 'TBD' and timezone is 'UTC' — admins override these per actual session.",
+            "properties": {
+                "room": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": "TBD",
+                    "description": "Default room name. Always 'TBD' for the template row — individual sessions replace this with an actual room. DB: SessionLocationDetails.Room varchar."
+                },
+                "timeZoneCode": {
+                    "type": "string",
+                    "default": "UTC",
+                    "description": "IANA or Windows timezone code for the default location. Defaults to UTC on template creation. DB: SessionLocationDetails.TimeZoneCode varchar."
+                },
+                "seatingType": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default seating arrangement (e.g., 'Theater', 'Classroom', 'Boardroom'). Optional — null when not configured. DB: SessionLocationDetails.SeatingType varchar.",
+                    "default": null
+                },
+                "maxCapacity": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "description": "Default maximum number of learners the location can hold. Null when not configured. DB: SessionLocationDetails.MaxLocationSize int.",
+                    "default": null
+                },
+                "country": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default country for the training location. DB: SessionLocationDetails.Country varchar.",
+                    "default": null
+                },
+                "city": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default city for the training location. DB: SessionLocationDetails.City varchar.",
+                    "default": null
+                },
+                "address": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default street address for the training location. DB: SessionLocationDetails.Address varchar.",
+                    "default": null
+                },
+                "postalCode": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default postal/zip code for the training location. DB: SessionLocationDetails.PostalCode varchar.",
+                    "default": null
+                },
+                "state": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default state or province for the training location. DB: SessionLocationDetails.State varchar.",
+                    "default": null
+                },
+                "meetingId": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default virtual meeting ID (used when locationType is 'Virtual'). Provider-specific identifier. DB: SessionLocationDetails.MeetingID varchar.",
+                    "default": null
+                },
+                "doNotInherit": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "When true, this location record is not shared/inherited from a reusable room — it is a one-time location specific to this session template. DB: SessionLocationDetails.DoNotInherit bit."
+                },
+                "isOneTime": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "When true, the location is for a single use and will not appear in the reusable room picker for future sessions. DB: SessionLocationDetails.IsOneTime bit."
+                }
+            },
+            "required": [
+                "room",
+                "timeZoneCode"
+            ]
+        }
+    },
+    "required": [],
+    "examples": [
+        {
+            "attendanceCode": null,
+            "locationType": "Room",
+            "isTBD": true,
+            "isRequired": false,
+            "isMultipleDaysSession": false,
+            "recordScore": false,
+            "defaultLocation": {
+                "room": "TBD",
+                "timeZoneCode": "UTC",
+                "doNotInherit": false,
+                "isOneTime": false
+            }
+        }
+    ]
+}
