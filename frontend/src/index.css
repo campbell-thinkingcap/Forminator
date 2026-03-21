@@ -72,34 +72,41 @@ body {
 
 .workspace {
   display: flex;
-  gap: 1.5rem;
   align-items: flex-start;
   flex: 1;
 }
 
 .form-column {
-  flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .resizer {
-  width: 5px;
+  width: 8px;
   flex-shrink: 0;
   cursor: col-resize;
-  background: transparent;
-  border-radius: 4px;
-  transition: background 0.15s ease;
-  margin: 0 -2px;
+  position: relative;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.resizer:hover,
-.resizer:active {
+.resizer::after {
+  content: '';
+  width: 2px;
+  height: 100%;
+  min-height: 40px;
+  background: var(--glass-border);
+  border-radius: 2px;
+  transition: background 0.15s ease;
+}
+
+.resizer:hover::after {
   background: var(--primary);
 }
 
 .schema-panel {
-  flex-shrink: 0;
   position: sticky;
   top: 2rem;
   max-height: calc(100vh - 4rem);

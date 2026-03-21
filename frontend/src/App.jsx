@@ -12,16 +12,16 @@ function App() {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [panelWidth, setPanelWidth] = useState(360);
+  const [splitPercent, setSplitPercent] = useState(60);
   const workspaceRef = useRef(null);
 
   const onResizerMouseDown = useCallback((e) => {
     e.preventDefault();
 
     const onMouseMove = (e) => {
-      const workspaceRight = workspaceRef.current.getBoundingClientRect().right;
-      const newWidth = Math.max(200, Math.min(700, workspaceRight - e.clientX));
-      setPanelWidth(newWidth);
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitPercent(Math.max(20, Math.min(80, pct)));
     };
 
     const onMouseUp = () => {
@@ -101,7 +101,7 @@ function App() {
       )}
 
       <div className="workspace" ref={workspaceRef}>
-        <main className="form-column">
+        <main className="form-column" style={{ width: `${splitPercent}%` }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
               <div className="loader">Loading Schema...</div>
@@ -133,7 +133,7 @@ function App() {
 
         <div className="resizer" onMouseDown={onResizerMouseDown} />
 
-        <aside className="schema-panel" style={{ width: panelWidth }}>
+        <aside className="schema-panel" style={{ width: `${100 - splitPercent}%` }}>
           <div className="schema-panel-header">
             <Braces size={16} />
             <span>Schema Definition</span>
