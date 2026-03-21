@@ -47,7 +47,7 @@ const JsonHighlight = ({ value, activeKey }) => {
 
   useEffect(() => {
     if (activeLineRef.current) {
-      activeLineRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      activeLineRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [activeKey]);
 
