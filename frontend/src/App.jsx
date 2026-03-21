@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import DynamicForm from './components/DynamicForm';
 import { Code, FileJson, AlertCircle, Braces } from 'lucide-react';
@@ -12,6 +12,31 @@ function App() {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [panelWidth, setPanelWidth] = useState(360);
+  const dragState = useRef(null);
+
+  const onResizerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    dragState.current = { startX: e.clientX, startWidth: panelWidth };
+
+    const onMouseMove = (e) => {
+      const delta = dragState.current.startX - e.clientX;
+      const newWidth = Math.max(200, Math.min(700, dragState.current.startWidth + delta));
+      setPanelWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [panelWidth]);
 
   useEffect(() => {
     fetchSchemas();
@@ -107,7 +132,9 @@ function App() {
           )}
         </main>
 
-        <aside className="schema-panel">
+        <div className="resizer" onMouseDown={onResizerMouseDown} />
+
+        <aside className="schema-panel" style={{ width: panelWidth }}>
           <div className="schema-panel-header">
             <Braces size={16} />
             <span>Schema Definition</span>

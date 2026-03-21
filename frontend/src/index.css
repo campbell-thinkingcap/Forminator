@@ -82,8 +82,23 @@ body {
   min-width: 0;
 }
 
+.resizer {
+  width: 5px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  margin: 0 -2px;
+  z-index: 10;
+}
+
+.resizer:hover,
+.resizer:active {
+  background: var(--primary);
+}
+
 .schema-panel {
-  width: 360px;
   flex-shrink: 0;
   position: sticky;
   top: 2rem;
