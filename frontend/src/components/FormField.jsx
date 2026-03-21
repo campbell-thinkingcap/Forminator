@@ -6,7 +6,7 @@ const FormField = ({ label, type, value, onChange, onFocus, description, schema,
       <div className="form-group">
         <label>{label}</label>
         {description && <p className="description">{description}</p>}
-        <div className="uuid-display">{value || <span className="uuid-placeholder">auto-assigned</span>}</div>
+        <div className="uuid-display" onClick={onFocus}>{value || <span className="uuid-placeholder">auto-assigned</span>}</div>
       </div>
     );
   }
