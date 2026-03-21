@@ -13,15 +13,14 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [panelWidth, setPanelWidth] = useState(360);
-  const dragState = useRef(null);
+  const workspaceRef = useRef(null);
 
   const onResizerMouseDown = useCallback((e) => {
     e.preventDefault();
-    dragState.current = { startX: e.clientX, startWidth: panelWidth };
 
     const onMouseMove = (e) => {
-      const delta = dragState.current.startX - e.clientX;
-      const newWidth = Math.max(200, Math.min(700, dragState.current.startWidth + delta));
+      const workspaceRight = workspaceRef.current.getBoundingClientRect().right;
+      const newWidth = Math.max(200, Math.min(700, workspaceRight - e.clientX));
       setPanelWidth(newWidth);
     };
 
@@ -36,7 +35,7 @@ function App() {
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [panelWidth]);
+  }, []);
 
   useEffect(() => {
     fetchSchemas();
@@ -101,7 +100,7 @@ function App() {
         </div>
       )}
 
-      <div className="workspace">
+      <div className="workspace" ref={workspaceRef}>
         <main className="form-column">
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
