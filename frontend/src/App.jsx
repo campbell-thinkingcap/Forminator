@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import DynamicForm from './components/DynamicForm';
+import JsonHighlight from './components/JsonHighlight';
 import { Code, FileJson, AlertCircle, Braces } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -140,7 +141,7 @@ function App() {
           </div>
           <div className="schema-panel-body">
             {schema ? (
-              <pre>{JSON.stringify(schema, null, 2)}</pre>
+              <JsonHighlight value={schema} />
             ) : (
               <span className="schema-panel-empty">No schema loaded</span>
             )}

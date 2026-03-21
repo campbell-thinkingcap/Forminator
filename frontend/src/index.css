@@ -142,10 +142,18 @@ body {
 .schema-panel-body pre {
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.75rem;
-  color: #10b981;
   white-space: pre;
   margin: 0;
 }
+
+.json-highlight { color: #94a3b8; display: block; }
+.jh-line        { display: flex; }
+.jh-ln          { min-width: 2.5rem; padding-right: 1rem; text-align: right; color: #334155; user-select: none; flex-shrink: 0; }
+.jh-key        { color: #818cf8; }
+.jh-string     { color: #10b981; }
+.jh-number     { color: #f59e0b; }
+.jh-bool       { color: #f472b6; }
+.jh-null       { color: #64748b; }
 
 .schema-panel-empty {
   color: var(--text-muted);
