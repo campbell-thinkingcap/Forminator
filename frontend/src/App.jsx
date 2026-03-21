@@ -13,7 +13,7 @@ function App() {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [splitPercent, setSplitPercent] = useState(60);
+  const [splitPercent, setSplitPercent] = useState(40);
   const [activeField, setActiveField] = useState(null);
   const workspaceRef = useRef(null);
 
@@ -81,18 +81,6 @@ function App() {
           <h1>Forminator</h1>
           <p className="subtitle">Dynamic Form Generator based on JSON Schema</p>
         </div>
-        <div className="card header-selector">
-          <FileJson size={20} color="#818cf8" />
-          <select
-            value={selectedSchemaName}
-            onChange={(e) => handleSchemaSelect(e.target.value)}
-          >
-            <option value="" disabled>Select a schema...</option>
-            {schemas.map(s => (
-              <option key={s.name} value={s.name}>{s.name}.json</option>
-            ))}
-          </select>
-        </div>
       </header>
 
       {error && (
@@ -103,7 +91,35 @@ function App() {
       )}
 
       <div className="workspace" ref={workspaceRef}>
-        <main className="form-column" style={{ width: `${splitPercent}%` }}>
+        <aside className="schema-panel" style={{ width: `${splitPercent}%` }}>
+          <div className="schema-panel-header">
+            <Braces size={16} />
+            <span>Schema Definition</span>
+            <div className="schema-selector">
+              <FileJson size={16} color="#818cf8" />
+              <select
+                value={selectedSchemaName}
+                onChange={(e) => handleSchemaSelect(e.target.value)}
+              >
+                <option value="" disabled>Select a schema...</option>
+                {schemas.map(s => (
+                  <option key={s.name} value={s.name}>{s.name}.json</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="schema-panel-body">
+            {schema ? (
+              <JsonHighlight value={schema} activeKey={activeField} />
+            ) : (
+              <span className="schema-panel-empty">No schema loaded</span>
+            )}
+          </div>
+        </aside>
+
+        <div className="resizer" onMouseDown={onResizerMouseDown} />
+
+        <main className="form-column" style={{ width: `${100 - splitPercent}%` }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
               <div className="loader">Loading Schema...</div>
@@ -133,22 +149,6 @@ function App() {
             !error && <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '3rem' }}>Select a schema to begin</div>
           )}
         </main>
-
-        <div className="resizer" onMouseDown={onResizerMouseDown} />
-
-        <aside className="schema-panel" style={{ width: `${100 - splitPercent}%` }}>
-          <div className="schema-panel-header">
-            <Braces size={16} />
-            <span>Schema Definition</span>
-          </div>
-          <div className="schema-panel-body">
-            {schema ? (
-              <JsonHighlight value={schema} activeKey={activeField} />
-            ) : (
-              <span className="schema-panel-empty">No schema loaded</span>
-            )}
-          </div>
-        </aside>
       </div>
     </div>
   );
