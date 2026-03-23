@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import DynamicForm from './components/DynamicForm';
 import JsonHighlight from './components/JsonHighlight';
-import { Code, FileJson, AlertCircle, Braces } from 'lucide-react';
+import { Code, FileJson, AlertCircle, Braces, ExternalLink } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -127,7 +127,18 @@ function App() {
           ) : schema ? (
             <div className="fade-in">
               <div className="card">
-                <h2 style={{ marginBottom: '0.5rem' }}>{schema.title}</h2>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <h2>{schema.title}</h2>
+                  <a
+                    href={`${API_BASE}/data/${selectedSchemaName}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#818cf8', textDecoration: 'none', whiteSpace: 'nowrap', marginTop: '0.25rem' }}
+                  >
+                    <ExternalLink size={13} />
+                    API
+                  </a>
+                </div>
                 <p className="description" style={{ marginBottom: '2rem' }}>{schema.description}</p>
                 <DynamicForm
                   schema={schema}
