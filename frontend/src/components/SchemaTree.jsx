@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, LogIn } from 'lucide-react';
 
-const TCOV_PROXY = 'http://localhost:3001/api/tcov/schemas';
+const TCOV_PROXY = `${import.meta.env.VITE_API_BASE ?? '/api'}/tcov/schemas`;
 const GOOGLE_CLIENT_ID = '707883987481-a3meetsljvs63uqa2uhhdjibkqsai1gk.apps.googleusercontent.com';
 const TOKEN_KEY = 'forminator_google_token';
 

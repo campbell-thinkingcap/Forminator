@@ -1,0 +1,8 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - TCOV_API_BASE=https://tcov.thinkingcap.com/api

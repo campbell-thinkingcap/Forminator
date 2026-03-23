@@ -6,7 +6,7 @@ import ApiDocs from './components/ApiDocs';
 import SchemaTree from './components/SchemaTree';
 import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate } from 'lucide-react';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
 function App() {
   const [schemas, setSchemas] = useState([]);
