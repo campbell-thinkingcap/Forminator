@@ -39,5 +39,7 @@ jobs:
             --environment $ENVIRONMENT \
             --image $IMAGE:${{ github.sha }} \
             --registry-server forminator.azurecr.io \
+            --registry-username ${{ secrets.ACR_USERNAME }} \
+            --registry-password ${{ secrets.ACR_PASSWORD }} \
             --target-port 3001 \
             --ingress external
