@@ -53,16 +53,11 @@ app.get('/api/schemas/:name', (req, res) => {
   });
 });
 
-// Proxy to TCOV schema registry — forwards Authorization header or falls back to TCOV_API_KEY env var
+// Proxy to TCOV schema registry (no auth required)
 app.get('/api/tcov/schemas', (req, res) => {
   const tcovBase = process.env.TCOV_API_BASE || 'https://tcov.thinkingcap.com/api';
-  const apiKey = process.env.TCOV_API_KEY;
-  const authHeader = req.headers['authorization'] || (apiKey ? `Bearer ${apiKey}` : undefined);
 
-  const reqOptions = { headers: {} };
-  if (authHeader) reqOptions.headers['Authorization'] = authHeader;
-
-  https.get(`${tcovBase}/schemas`, reqOptions, (tcovRes) => {
+  https.get(`${tcovBase}/schemas`, (tcovRes) => {
     res.status(tcovRes.statusCode);
     res.setHeader('Content-Type', 'application/json');
     tcovRes.pipe(res);

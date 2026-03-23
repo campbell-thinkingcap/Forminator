@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw } from 'lucide-react';
 
-const TCOV_SCHEMAS_URL = 'https://tcov.thinkingcap.com/api/schemas';
+const TCOV_SCHEMAS_URL = 'http://localhost:3001/api/tcov/schemas';
 
 // Build a recursive tree from the flat schemas list using blobDir as path
 function buildTree(schemas) {
