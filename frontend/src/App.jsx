@@ -3,6 +3,7 @@ import axios from 'axios';
 import DynamicForm from './components/DynamicForm';
 import JsonHighlight from './components/JsonHighlight';
 import ApiDocs from './components/ApiDocs';
+import SchemaTree from './components/SchemaTree';
 import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -17,6 +18,7 @@ function App() {
   const [splitPercent, setSplitPercent] = useState(40);
   const [activeField, setActiveField] = useState(null);
   const [view, setView] = useState('form');
+  const [selectedBlobDir, setSelectedBlobDir] = useState(null);
   const workspaceRef = useRef(null);
 
   const onResizerMouseDown = useCallback((e) => {
@@ -108,26 +110,34 @@ function App() {
         </div>
       )}
 
-      {view === 'docs' && (
-        <div style={{ padding: '0 0.5rem' }}>
-          <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <FileJson size={16} color="#818cf8" />
-            <select
-              value={selectedSchemaName}
-              onChange={(e) => handleSchemaSelect(e.target.value)}
-              style={{ width: 'auto', minWidth: '180px', padding: '0.4rem 0.75rem', fontSize: '0.85rem', borderRadius: '0.5rem' }}
-            >
-              <option value="" disabled>Select a schema...</option>
-              {schemas.map(s => (
-                <option key={s.name} value={s.name}>{s.name}.json</option>
-              ))}
-            </select>
-          </div>
-          <ApiDocs schema={schema} schemaName={selectedSchemaName} apiBase={API_BASE} />
-        </div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'flex-start', flex: 1 }}>
+        <SchemaTree
+          selectedBlobDir={selectedBlobDir}
+          onSelect={(tcovSchema) => {
+            setSelectedBlobDir(tcovSchema.blobDir);
+          }}
+        />
 
-      <div className="workspace" ref={workspaceRef} style={{ display: view === 'form' ? 'flex' : 'none' }}>
+        {view === 'docs' && (
+          <div style={{ flex: 1, minWidth: 0, padding: '0 0.5rem' }}>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <FileJson size={16} color="#818cf8" />
+              <select
+                value={selectedSchemaName}
+                onChange={(e) => handleSchemaSelect(e.target.value)}
+                style={{ width: 'auto', minWidth: '180px', padding: '0.4rem 0.75rem', fontSize: '0.85rem', borderRadius: '0.5rem' }}
+              >
+                <option value="" disabled>Select a schema...</option>
+                {schemas.map(s => (
+                  <option key={s.name} value={s.name}>{s.name}.json</option>
+                ))}
+              </select>
+            </div>
+            <ApiDocs schema={schema} schemaName={selectedSchemaName} apiBase={API_BASE} />
+          </div>
+        )}
+
+        <div className="workspace" ref={workspaceRef} style={{ display: view === 'form' ? 'flex' : 'none', flex: 1, minWidth: 0 }}>
         <aside className="schema-panel" style={{ width: `${splitPercent}%` }}>
           <div className="schema-panel-header">
             <Braces size={16} />
@@ -197,6 +207,7 @@ function App() {
             !error && <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '3rem' }}>Select a schema to begin</div>
           )}
         </main>
+        </div>
       </div>
     </div>
   );
