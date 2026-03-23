@@ -149,21 +149,43 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
 
   useEffect(() => { load(token); }, [load, token]);
 
-  // Render Google Sign-In button once we know auth is needed
+  // When auth is needed, try silent sign-in first; show button only if that fails
   useEffect(() => {
-    if (status !== 'auth' || !window.google || !googleBtnRef.current) return;
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: ({ credential }) => {
-        sessionStorage.setItem(TOKEN_KEY, credential);
-        setToken(credential);
-      },
-    });
-    window.google.accounts.id.renderButton(googleBtnRef.current, {
-      theme: 'filled_black',
-      size: 'medium',
-      text: 'signin_with',
-    });
+    if (status !== 'auth') return;
+
+    const trySignIn = () => {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        auto_select: true,
+        callback: ({ credential }) => {
+          sessionStorage.setItem(TOKEN_KEY, credential);
+          setToken(credential);
+        },
+      });
+
+      // Attempt silent sign-in; if skipped/dismissed, render the button
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
+          if (googleBtnRef.current) {
+            window.google.accounts.id.renderButton(googleBtnRef.current, {
+              theme: 'filled_black',
+              size: 'medium',
+              text: 'signin_with',
+            });
+          }
+        }
+      });
+    };
+
+    if (window.google) {
+      trySignIn();
+    } else {
+      // GSI script not yet loaded — wait for it
+      const interval = setInterval(() => {
+        if (window.google) { clearInterval(interval); trySignIn(); }
+      }, 100);
+      return () => clearInterval(interval);
+    }
   }, [status]);
 
   const filteredTree = filter.trim()
