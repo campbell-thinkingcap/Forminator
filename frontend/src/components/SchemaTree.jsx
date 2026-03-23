@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, LogIn } from 'lucide-react';
 
-const TCOV_SCHEMAS_URL = 'http://localhost:3001/api/tcov/schemas';
+const TCOV_PROXY = 'http://localhost:3001/api/tcov/schemas';
+const GOOGLE_CLIENT_ID = '707883987481-a3meetsljvs63uqa2uhhdjibkqsai1gk.apps.googleusercontent.com';
+const TOKEN_KEY = 'forminator_google_token';
 
 // Build a recursive tree from the flat schemas list using blobDir as path
 function buildTree(schemas) {
@@ -123,16 +125,20 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, defaultOpen }) {
 }
 
 export default function SchemaTree({ onSelect, selectedBlobDir }) {
-  const [status, setStatus] = useState('idle'); // idle | loading | error | ok
+  const [status, setStatus] = useState('idle'); // idle | loading | auth | error | ok
   const [tree, setTree] = useState([]);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState('');
+  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY) || '');
+  const googleBtnRef = useRef(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (idToken) => {
     setStatus('loading');
     try {
-      const res = await fetch(TCOV_SCHEMAS_URL);
+      const headers = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+      const res = await fetch(TCOV_PROXY, { headers });
       const data = await res.json();
+      if (res.status === 401) { setStatus('auth'); return; }
       setTree(buildTree(data.schemas || []));
       setTotal(data.total || 0);
       setStatus('ok');
@@ -141,7 +147,24 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(token); }, [load, token]);
+
+  // Render Google Sign-In button once we know auth is needed
+  useEffect(() => {
+    if (status !== 'auth' || !window.google || !googleBtnRef.current) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: ({ credential }) => {
+        sessionStorage.setItem(TOKEN_KEY, credential);
+        setToken(credential);
+      },
+    });
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme: 'filled_black',
+      size: 'medium',
+      text: 'signin_with',
+    });
+  }, [status]);
 
   const filteredTree = filter.trim()
     ? flatFilter(tree, filter.toLowerCase())
@@ -155,11 +178,22 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
     </PanelShell>
   );
 
+  if (status === 'auth') return (
+    <PanelShell>
+      <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#94a3b8', fontSize: '0.72rem' }}>
+          <LogIn size={13} /> Sign in to load schemas
+        </div>
+        <div ref={googleBtnRef} />
+      </div>
+    </PanelShell>
+  );
+
   if (status === 'error') return (
     <PanelShell>
       <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.72rem' }}>
         Failed to reach TCOV schemas.
-        <button onClick={() => load()} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
+        <button onClick={() => load(token)} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
           Retry
         </button>
       </div>
