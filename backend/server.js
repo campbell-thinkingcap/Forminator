@@ -2,12 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const dataRouter = require('./routes/data');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/data', dataRouter);
 
 const SCHEMAS_DIR = path.join(__dirname, '../schemas');
 
