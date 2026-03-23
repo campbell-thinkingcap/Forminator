@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, KeyRound } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw } from 'lucide-react';
 
-const TCOV_PROXY = 'http://localhost:3001/api/tcov/schemas';
-const TOKEN_KEY = 'forminator_tcov_token';
+const TCOV_SCHEMAS_URL = 'https://tcov.thinkingcap.com/api/schemas';
 
 // Build a recursive tree from the flat schemas list using blobDir as path
 function buildTree(schemas) {
@@ -124,26 +123,16 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, defaultOpen }) {
 }
 
 export default function SchemaTree({ onSelect, selectedBlobDir }) {
-  const [status, setStatus] = useState('idle'); // idle | loading | auth | error | ok
+  const [status, setStatus] = useState('idle'); // idle | loading | error | ok
   const [tree, setTree] = useState([]);
   const [total, setTotal] = useState(0);
-  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY) || '');
-  const [tokenInput, setTokenInput] = useState('');
   const [filter, setFilter] = useState('');
 
-  const load = useCallback(async (authToken) => {
+  const load = useCallback(async () => {
     setStatus('loading');
     try {
-      const headers = {};
-      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-      const res = await fetch(TCOV_PROXY, { headers });
+      const res = await fetch(TCOV_SCHEMAS_URL);
       const data = await res.json();
-
-      if (res.status === 401 || data.error) {
-        setStatus('auth');
-        return;
-      }
-
       setTree(buildTree(data.schemas || []));
       setTotal(data.total || 0);
       setStatus('ok');
@@ -152,13 +141,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
     }
   }, []);
 
-  useEffect(() => { load(token); }, [load, token]);
-
-  const handleTokenSubmit = (e) => {
-    e.preventDefault();
-    sessionStorage.setItem(TOKEN_KEY, tokenInput);
-    setToken(tokenInput);
-  };
+  useEffect(() => { load(); }, [load]);
 
   const filteredTree = filter.trim()
     ? flatFilter(tree, filter.toLowerCase())
@@ -172,34 +155,11 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
     </PanelShell>
   );
 
-  if (status === 'auth') return (
-    <PanelShell>
-      <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f59e0b', fontSize: '0.72rem', fontWeight: 600 }}>
-          <KeyRound size={13} /> Auth required
-        </div>
-        <p style={{ color: '#64748b', fontSize: '0.72rem', lineHeight: 1.5 }}>
-          Paste a TCOV API token, or set <code style={{ color: '#818cf8' }}>TCOV_API_KEY</code> in the backend env and restart.
-        </p>
-        <form onSubmit={handleTokenSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <input
-            type="password"
-            value={tokenInput}
-            onChange={e => setTokenInput(e.target.value)}
-            placeholder="Bearer token..."
-            style={{ fontSize: '0.72rem', padding: '0.4rem 0.6rem', borderRadius: '0.4rem' }}
-          />
-          <button type="submit" style={{ fontSize: '0.72rem', padding: '0.35rem 0.75rem' }}>Connect</button>
-        </form>
-      </div>
-    </PanelShell>
-  );
-
   if (status === 'error') return (
     <PanelShell>
       <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.72rem' }}>
-        Failed to reach proxy. Is the backend running?
-        <button onClick={() => load(token)} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
+        Failed to reach TCOV schemas.
+        <button onClick={() => load()} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
           Retry
         </button>
       </div>
