@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import DynamicForm from './components/DynamicForm';
 import JsonHighlight from './components/JsonHighlight';
-import { Code, FileJson, AlertCircle, Braces, ExternalLink } from 'lucide-react';
+import ApiDocs from './components/ApiDocs';
+import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -15,6 +16,7 @@ function App() {
   const [error, setError] = useState(null);
   const [splitPercent, setSplitPercent] = useState(40);
   const [activeField, setActiveField] = useState(null);
+  const [view, setView] = useState('form');
   const workspaceRef = useRef(null);
 
   const onResizerMouseDown = useCallback((e) => {
@@ -81,6 +83,22 @@ function App() {
           <h1>Forminator</h1>
           <p className="subtitle">Dynamic Form Generator based on JSON Schema</p>
         </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            className={view === 'form' ? '' : 'secondary'}
+            onClick={() => setView('form')}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+          >
+            <LayoutTemplate size={15} /> Form
+          </button>
+          <button
+            className={view === 'docs' ? '' : 'secondary'}
+            onClick={() => setView('docs')}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+          >
+            <BookOpen size={15} /> API Docs
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -90,7 +108,26 @@ function App() {
         </div>
       )}
 
-      <div className="workspace" ref={workspaceRef}>
+      {view === 'docs' && (
+        <div style={{ padding: '0 0.5rem' }}>
+          <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <FileJson size={16} color="#818cf8" />
+            <select
+              value={selectedSchemaName}
+              onChange={(e) => handleSchemaSelect(e.target.value)}
+              style={{ width: 'auto', minWidth: '180px', padding: '0.4rem 0.75rem', fontSize: '0.85rem', borderRadius: '0.5rem' }}
+            >
+              <option value="" disabled>Select a schema...</option>
+              {schemas.map(s => (
+                <option key={s.name} value={s.name}>{s.name}.json</option>
+              ))}
+            </select>
+          </div>
+          <ApiDocs schema={schema} schemaName={selectedSchemaName} apiBase={API_BASE} />
+        </div>
+      )}
+
+      <div className="workspace" ref={workspaceRef} style={{ display: view === 'form' ? 'flex' : 'none' }}>
         <aside className="schema-panel" style={{ width: `${splitPercent}%` }}>
           <div className="schema-panel-header">
             <Braces size={16} />
