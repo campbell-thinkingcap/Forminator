@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const Ajv = require('ajv/dist/2020');
+const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 
 const router = express.Router();
