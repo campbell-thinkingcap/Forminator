@@ -44,13 +44,8 @@ router.get('/schemas/*', async (req, res) => {
     const container = getContainerClient();
     const blobClient = container.getBlobClient(blobPath);
 
-    const download = await blobClient.download();
-    const chunks = [];
-    for await (const chunk of download.readableStreamBody) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-
-    const content = Buffer.concat(chunks).toString('utf8');
+    const buffer = await blobClient.downloadToBuffer();
+    const content = buffer.toString('utf8');
     res.setHeader('Content-Type', 'application/json');
     res.send(content);
   } catch (err) {
