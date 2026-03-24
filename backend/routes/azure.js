@@ -16,21 +16,20 @@ function getContainerClient() {
   return serviceClient.getContainerClient(SCHEMAS_CONTAINER);
 }
 
-// List all schemas (blobs named schema.json)
+// List all .json files in the schemas container
 router.get('/schemas', async (req, res) => {
   try {
     const container = getContainerClient();
-    const schemas = [];
+    const files = [];
 
     for await (const blob of container.listBlobsFlat()) {
-      if (blob.name.endsWith('/schema.json')) {
-        const blobDir = blob.name.slice(0, -'/schema.json'.length);
-        schemas.push({ name: blobDir, blobDir, blobPath: blob.name });
+      if (blob.name.endsWith('.json')) {
+        files.push(blob.name);
       }
     }
 
-    schemas.sort((a, b) => a.blobDir.localeCompare(b.blobDir));
-    res.json({ schemas, total: schemas.length });
+    files.sort();
+    res.json({ files, total: files.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
