@@ -1,9 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const dataRouter = require('./routes/data');
+const azureRouter = require('./routes/azure');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/data', dataRouter);
+app.use('/api/azure', azureRouter);
 
 const SCHEMAS_DIR = path.join(__dirname, '../schemas');
 

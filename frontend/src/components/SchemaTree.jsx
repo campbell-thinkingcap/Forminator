@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, LogIn } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw } from 'lucide-react';
 
-const TCOV_PROXY = `${import.meta.env.VITE_API_BASE ?? '/api'}/tcov/schemas`;
-const GOOGLE_CLIENT_ID = '707883987481-a3meetsljvs63uqa2uhhdjibkqsai1gk.apps.googleusercontent.com';
-const TOKEN_KEY = 'forminator_google_token';
+const AZURE_API = `${import.meta.env.VITE_API_BASE ?? '/api'}/azure/schemas`;
 
 // Build a recursive tree from the flat schemas list using blobDir as path
 function buildTree(schemas) {
@@ -36,10 +34,10 @@ function buildTree(schemas) {
   return root;
 }
 
-function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, defaultOpen }) {
+function TreeNode({ node, depth = 0, selectedBlobDir, onSelect }) {
   const isLeaf = node.schema !== null && node.children.length === 0;
   const isFolder = node.children.length > 0;
-  const [open, setOpen] = useState(defaultOpen || depth === 0);
+  const [open, setOpen] = useState(depth === 0);
   const isSelected = node.schema?.blobDir === selectedBlobDir;
 
   const indent = depth * 12;
@@ -106,7 +104,7 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, defaultOpen }) {
           </span>
         )}
       </div>
-      {open && isFolder && (
+      {open && (
         <div>
           {node.children.map(child => (
             <TreeNode
@@ -115,7 +113,6 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, defaultOpen }) {
               depth={depth + 1}
               selectedBlobDir={selectedBlobDir}
               onSelect={onSelect}
-              defaultOpen={false}
             />
           ))}
         </div>
@@ -125,20 +122,17 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, defaultOpen }) {
 }
 
 export default function SchemaTree({ onSelect, selectedBlobDir }) {
-  const [status, setStatus] = useState('idle'); // idle | loading | auth | error | ok
+  const [status, setStatus] = useState('idle'); // idle | loading | error | ok
   const [tree, setTree] = useState([]);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState('');
-  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY) || '');
-  const googleBtnRef = useRef(null);
 
-  const load = useCallback(async (idToken) => {
+  const load = useCallback(async () => {
     setStatus('loading');
     try {
-      const headers = idToken ? { Authorization: `Bearer ${idToken}` } : {};
-      const res = await fetch(TCOV_PROXY, { headers });
+      const res = await fetch(AZURE_API);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (res.status === 401) { setStatus('auth'); return; }
       setTree(buildTree(data.schemas || []));
       setTotal(data.total || 0);
       setStatus('ok');
@@ -147,50 +141,9 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
     }
   }, []);
 
-  useEffect(() => { load(token); }, [load, token]);
+  useEffect(() => { load(); }, [load]);
 
-  // When auth is needed, try silent sign-in first; show button only if that fails
-  useEffect(() => {
-    if (status !== 'auth') return;
-
-    const trySignIn = () => {
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        auto_select: true,
-        callback: ({ credential }) => {
-          sessionStorage.setItem(TOKEN_KEY, credential);
-          setToken(credential);
-        },
-      });
-
-      // Attempt silent sign-in; if skipped/dismissed, render the button
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
-          if (googleBtnRef.current) {
-            window.google.accounts.id.renderButton(googleBtnRef.current, {
-              theme: 'filled_black',
-              size: 'medium',
-              text: 'signin_with',
-            });
-          }
-        }
-      });
-    };
-
-    if (window.google) {
-      trySignIn();
-    } else {
-      // GSI script not yet loaded — wait for it
-      const interval = setInterval(() => {
-        if (window.google) { clearInterval(interval); trySignIn(); }
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [status]);
-
-  const filteredTree = filter.trim()
-    ? flatFilter(tree, filter.toLowerCase())
-    : tree;
+  const filteredTree = filter.trim() ? flatFilter(tree, filter.toLowerCase()) : tree;
 
   if (status === 'loading') return (
     <PanelShell>
@@ -200,22 +153,11 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
     </PanelShell>
   );
 
-  if (status === 'auth') return (
-    <PanelShell>
-      <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#94a3b8', fontSize: '0.72rem' }}>
-          <LogIn size={13} /> Sign in to load schemas
-        </div>
-        <div ref={googleBtnRef} />
-      </div>
-    </PanelShell>
-  );
-
   if (status === 'error') return (
     <PanelShell>
       <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.72rem' }}>
-        Failed to reach TCOV schemas.
-        <button onClick={() => load(token)} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
+        Failed to reach Azure schemas.
+        <button onClick={load} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
           Retry
         </button>
       </div>
@@ -240,7 +182,6 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
             depth={0}
             selectedBlobDir={selectedBlobDir}
             onSelect={onSelect}
-            defaultOpen={false}
           />
         ))}
       </div>
@@ -277,14 +218,13 @@ function PanelShell({ children }) {
         gap: '0.4rem',
         flexShrink: 0,
       }}>
-        <FolderOpen size={13} color="#818cf8" /> TCOV Schemas
+        <FolderOpen size={13} color="#818cf8" /> Azure Schemas
       </div>
       {children}
     </aside>
   );
 }
 
-// Flatten tree to matching leaves only, preserving folder wrappers
 function flatFilter(nodes, query) {
   const result = [];
   for (const node of nodes) {

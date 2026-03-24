@@ -113,8 +113,21 @@ function App() {
       <div style={{ display: 'flex', alignItems: 'flex-start', flex: 1 }}>
         <SchemaTree
           selectedBlobDir={selectedBlobDir}
-          onSelect={(tcovSchema) => {
-            setSelectedBlobDir(tcovSchema.blobDir);
+          onSelect={async (azureSchema) => {
+            setSelectedBlobDir(azureSchema.blobDir);
+            setLoading(true);
+            setView('form');
+            try {
+              const res = await axios.get(`${API_BASE}/azure/schemas/${azureSchema.blobDir}`);
+              setSchema(res.data);
+              setSelectedSchemaName(azureSchema.blobDir);
+              setFormData({});
+              setError(null);
+            } catch {
+              setError('Failed to load Azure schema.');
+            } finally {
+              setLoading(false);
+            }
           }}
         />
 
