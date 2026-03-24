@@ -42,4 +42,5 @@ jobs:
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \
             --target-port 3001 \
-            --ingress external
+            --ingress external \
+            --env-vars AZURE_ACCOUNT_NAME=${{ secrets.AZURE_ACCOUNT_NAME }} AZURE_ACCOUNT_KEY=${{ secrets.AZURE_ACCOUNT_KEY }}
