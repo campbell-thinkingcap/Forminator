@@ -18,19 +18,27 @@ function getContainerClient() {
 
 // List all .json files in the schemas container
 router.get('/schemas', async (req, res) => {
+  console.log('[azure] GET /schemas — connecting to Azure...');
+  console.log('[azure] Account:', process.env.AZURE_ACCOUNT_NAME);
+  console.log('[azure] Key present:', !!process.env.AZURE_ACCOUNT_KEY);
   try {
     const container = getContainerClient();
+    console.log('[azure] Container client created, listing blobs...');
     const files = [];
 
     for await (const blob of container.listBlobsFlat()) {
+      console.log('[azure] blob:', blob.name);
       if (blob.name.endsWith('.json')) {
         files.push(blob.name);
       }
     }
 
+    console.log(`[azure] Done. ${files.length} JSON files found.`);
     files.sort();
     res.json({ files, total: files.length });
   } catch (err) {
+    console.error('[azure] ERROR:', err.message);
+    console.error('[azure] Stack:', err.stack);
     res.status(500).json({ error: err.message });
   }
 });
