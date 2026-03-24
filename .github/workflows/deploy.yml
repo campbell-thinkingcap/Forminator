@@ -32,6 +32,9 @@ jobs:
             .
 
       - name: Deploy to Container Apps
+        env:
+          AZ_ACCOUNT_NAME: ${{ secrets.AZURE_ACCOUNT_NAME }}
+          AZ_ACCOUNT_KEY: ${{ secrets.AZURE_ACCOUNT_KEY }}
         run: |
           az containerapp up \
             --name $CONTAINER_APP \
@@ -43,4 +46,4 @@ jobs:
             --registry-password ${{ secrets.ACR_PASSWORD }} \
             --target-port 3001 \
             --ingress external \
-            --env-vars AZURE_ACCOUNT_NAME=${{ secrets.AZURE_ACCOUNT_NAME }} AZURE_ACCOUNT_KEY=${{ secrets.AZURE_ACCOUNT_KEY }}
+            --env-vars "AZURE_ACCOUNT_NAME=$AZ_ACCOUNT_NAME" "AZURE_ACCOUNT_KEY=$AZ_ACCOUNT_KEY"
