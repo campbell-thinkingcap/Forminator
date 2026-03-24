@@ -6,8 +6,8 @@ const SCHEMAS_CONTAINER = 'schemas';
 
 function getContainerClient() {
   const cred = new StorageSharedKeyCredential(
-    process.env.AZURE_ACCOUNT_NAME,
-    process.env.AZURE_ACCOUNT_KEY
+    process.env.AZURE_ACCOUNT_NAME?.trim(),
+    process.env.AZURE_ACCOUNT_KEY?.trim()
   );
   const serviceClient = new BlobServiceClient(
     `https://${process.env.AZURE_ACCOUNT_NAME}.blob.core.windows.net`,
