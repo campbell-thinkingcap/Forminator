@@ -16,7 +16,7 @@ function getContainerClient() {
   return serviceClient.getContainerClient(SCHEMAS_CONTAINER);
 }
 
-// List all .json files in the schemas container
+// List all schema.json files in the schemas container, returned as { blobDir, label } objects
 router.get('/schemas', async (req, res) => {
   console.log('[azure] GET /schemas — connecting to Azure...');
   console.log('[azure] Account:', process.env.AZURE_ACCOUNT_NAME);
@@ -24,18 +24,18 @@ router.get('/schemas', async (req, res) => {
   try {
     const container = getContainerClient();
     console.log('[azure] Container client created, listing blobs...');
-    const files = [];
+    const schemas = [];
 
     for await (const blob of container.listBlobsFlat()) {
-      console.log('[azure] blob:', blob.name);
-      if (blob.name.endsWith('.json')) {
-        files.push(blob.name);
+      if (blob.name.endsWith('/schema.json')) {
+        const blobDir = blob.name.slice(0, -'/schema.json'.length);
+        schemas.push({ blobDir });
       }
     }
 
-    console.log(`[azure] Done. ${files.length} JSON files found.`);
-    files.sort();
-    res.json({ files, total: files.length });
+    schemas.sort((a, b) => a.blobDir.localeCompare(b.blobDir));
+    console.log(`[azure] Done. ${schemas.length} schemas found.`);
+    res.json({ schemas, total: schemas.length });
   } catch (err) {
     console.error('[azure] ERROR:', err.message);
     console.error('[azure] Stack:', err.stack);
