@@ -133,7 +133,7 @@ function App() {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', flex: 1, minHeight: 0 }}>
         <SchemaTree
           selectedBlobDir={selectedBlobDir}
           onSelect={async (azureSchema) => {
@@ -190,7 +190,7 @@ function App() {
 
         <div className="resizer" onMouseDown={onResizerMouseDown} />
 
-        <main className="form-column" style={{ width: `${100 - splitPercent}%` }}>
+        <main className="form-column" style={{ width: `${100 - splitPercent}%`, overflowY: 'auto' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
               <div className="loader">Loading Schema...</div>

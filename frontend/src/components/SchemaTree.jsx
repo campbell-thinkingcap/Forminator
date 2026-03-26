@@ -201,9 +201,6 @@ function PanelShell({ children, collapsed, onToggle }) {
       border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: '1rem',
       overflow: 'hidden',
-      position: 'sticky',
-      top: '2rem',
-      maxHeight: 'calc(100vh - 4rem)',
       marginRight: '8px',
       transition: 'width 0.2s ease',
     }}>
