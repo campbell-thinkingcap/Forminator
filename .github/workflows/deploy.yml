@@ -29,6 +29,7 @@ jobs:
             --registry $ACR_NAME \
             --image $IMAGE:${{ github.sha }} \
             --image $IMAGE:latest \
+            --build-arg VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }} \
             .
 
       - name: Deploy to Container Apps

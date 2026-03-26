@@ -4,11 +4,13 @@ import DynamicForm from './components/DynamicForm';
 import JsonHighlight from './components/JsonHighlight';
 import ApiDocs from './components/ApiDocs';
 import SchemaTree from './components/SchemaTree';
-import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate } from 'lucide-react';
+import LoginPage from './components/LoginPage';
+import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
 function App() {
+  const [user, setUser] = useState(null);
   const [schemas, setSchemas] = useState([]);
   const [selectedSchemaName, setSelectedSchemaName] = useState('');
   const [schema, setSchema] = useState(null);
@@ -20,6 +22,10 @@ function App() {
   const [view, setView] = useState('form');
   const [selectedBlobDir, setSelectedBlobDir] = useState(null);
   const workspaceRef = useRef(null);
+
+  if (!user) {
+    return <LoginPage onLogin={setUser} />;
+  }
 
   const onResizerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -85,7 +91,7 @@ function App() {
           <h1>Forminator</h1>
           <p className="subtitle">Dynamic Form Generator based on JSON Schema</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button
             className={view === 'form' ? '' : 'secondary'}
             onClick={() => setView('form')}
@@ -100,6 +106,17 @@ function App() {
           >
             <BookOpen size={15} /> API Docs
           </button>
+          <div className="user-pill">
+            {user.picture && <img src={user.picture} alt={user.name} className="user-avatar" referrerPolicy="no-referrer" />}
+            <span className="user-name">{user.name}</span>
+            <button
+              className="secondary sign-out-btn"
+              onClick={() => setUser(null)}
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
         </div>
       </header>
 

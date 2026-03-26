@@ -338,6 +338,84 @@ button.secondary:hover {
   color: #10b981;
 }
 
+/* Login page */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 3rem 2.5rem;
+}
+
+.login-divider {
+  width: 40px;
+  height: 2px;
+  background: var(--glass-border);
+  border-radius: 2px;
+  margin: 1rem 0;
+}
+
+.login-prompt {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.login-google-btn {
+  display: flex;
+  justify-content: center;
+}
+
+/* User pill in header */
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 2rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+  margin-left: 0.5rem;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.sign-out-btn {
+  padding: 0.25rem 0.4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.sign-out-btn:hover {
+  color: var(--text-main);
+  transform: none;
+}
+
 /* Animations */
 @keyframes spin {
   from { transform: rotate(0deg); }
