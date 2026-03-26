@@ -178,18 +178,6 @@ function App() {
           <div className="schema-panel-header">
             <Braces size={16} />
             <span>Schema Definition</span>
-            <div className="schema-selector">
-              <FileJson size={16} color="#818cf8" />
-              <select
-                value={selectedSchemaName}
-                onChange={(e) => handleSchemaSelect(e.target.value)}
-              >
-                <option value="" disabled>Select a schema...</option>
-                {schemas.map(s => (
-                  <option key={s.name} value={s.name}>{s.name}.json</option>
-                ))}
-              </select>
-            </div>
           </div>
           <div className="schema-panel-body">
             {schema ? (
