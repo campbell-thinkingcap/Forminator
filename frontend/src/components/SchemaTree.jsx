@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronRight, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw } from 'lucide-react';
 
 const AZURE_API = `${import.meta.env.VITE_API_BASE ?? '/api'}/azure/schemas`;
 
@@ -122,10 +122,11 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect }) {
 }
 
 export default function SchemaTree({ onSelect, selectedBlobDir }) {
-  const [status, setStatus] = useState('idle'); // idle | loading | error | ok
+  const [status, setStatus] = useState('idle');
   const [tree, setTree] = useState([]);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState('');
+  const [collapsed, setCollapsed] = useState(false);
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -146,7 +147,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
   const filteredTree = filter.trim() ? flatFilter(tree, filter.toLowerCase()) : tree;
 
   if (status === 'loading') return (
-    <PanelShell>
+    <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1rem' }}>
         <RefreshCw size={13} className="spin" /> Loading schemas...
       </div>
@@ -154,7 +155,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
   );
 
   if (status === 'error') return (
-    <PanelShell>
+    <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
       <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.72rem' }}>
         Failed to reach Azure schemas.
         <button onClick={load} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
@@ -165,7 +166,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
   );
 
   return (
-    <PanelShell>
+    <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
       <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <input
           value={filter}
@@ -189,10 +190,10 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
   );
 }
 
-function PanelShell({ children }) {
+function PanelShell({ children, collapsed, onToggle }) {
   return (
     <aside style={{
-      width: '220px',
+      width: collapsed ? '36px' : '220px',
       flexShrink: 0,
       display: 'flex',
       flexDirection: 'column',
@@ -204,10 +205,11 @@ function PanelShell({ children }) {
       top: '2rem',
       maxHeight: 'calc(100vh - 4rem)',
       marginRight: '8px',
+      transition: 'width 0.2s ease',
     }}>
       <div style={{
         padding: '0.6rem 0.75rem',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        borderBottom: collapsed ? 'none' : '1px solid rgba(255,255,255,0.07)',
         fontSize: '0.7rem',
         fontWeight: 700,
         textTransform: 'uppercase',
@@ -217,10 +219,32 @@ function PanelShell({ children }) {
         alignItems: 'center',
         gap: '0.4rem',
         flexShrink: 0,
+        justifyContent: collapsed ? 'center' : 'space-between',
       }}>
-        <FolderOpen size={13} color="#818cf8" /> Thinkingcap Schemas
+        {!collapsed && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <FolderOpen size={13} color="#818cf8" /> Thinkingcap Schemas
+          </span>
+        )}
+        <button
+          onClick={onToggle}
+          title={collapsed ? 'Expand panel' : 'Collapse panel'}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '0.1rem',
+            cursor: 'pointer',
+            color: '#475569',
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: '0.3rem',
+            transform: 'none',
+          }}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
       </div>
-      {children}
+      {!collapsed && children}
     </aside>
   );
 }
