@@ -28,10 +28,6 @@ function App() {
   const login = (u) => { localStorage.setItem('forminator_user', JSON.stringify(u)); setUser(u); };
   const logout = () => { localStorage.removeItem('forminator_user'); setUser(null); };
 
-  if (!user) {
-    return <LoginPage onLogin={login} />;
-  }
-
   const onResizerMouseDown = useCallback((e) => {
     e.preventDefault();
 
@@ -55,8 +51,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    fetchSchemas();
-  }, []);
+    if (user) fetchSchemas();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  if (!user) {
+    return <LoginPage onLogin={login} />;
+  }
 
   const fetchSchemas = async () => {
     try {
