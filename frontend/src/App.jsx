@@ -10,7 +10,9 @@ import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemp
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('forminator_user')) ?? null; } catch { return null; }
+  });
   const [schemas, setSchemas] = useState([]);
   const [selectedSchemaName, setSelectedSchemaName] = useState('');
   const [schema, setSchema] = useState(null);
@@ -23,8 +25,11 @@ function App() {
   const [selectedBlobDir, setSelectedBlobDir] = useState(null);
   const workspaceRef = useRef(null);
 
+  const login = (u) => { localStorage.setItem('forminator_user', JSON.stringify(u)); setUser(u); };
+  const logout = () => { localStorage.removeItem('forminator_user'); setUser(null); };
+
   if (!user) {
-    return <LoginPage onLogin={setUser} />;
+    return <LoginPage onLogin={login} />;
   }
 
   const onResizerMouseDown = useCallback((e) => {
@@ -111,7 +116,7 @@ function App() {
             <span className="user-name">{user.name}</span>
             <button
               className="secondary sign-out-btn"
-              onClick={() => setUser(null)}
+              onClick={logout}
               title="Sign out"
             >
               <LogOut size={14} />
