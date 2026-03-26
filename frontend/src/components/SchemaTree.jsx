@@ -218,7 +218,7 @@ function PanelShell({ children }) {
         gap: '0.4rem',
         flexShrink: 0,
       }}>
-        <FolderOpen size={13} color="#818cf8" /> Azure Schemas
+        <FolderOpen size={13} color="#818cf8" /> Thinkingcap Schemas
       </div>
       {children}
     </aside>
