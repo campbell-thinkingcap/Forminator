@@ -76,6 +76,8 @@ app.get('/api/tcov/schemas', (req, res) => {
 // Serve built frontend in production
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../frontend/dist');
+  const storybookPath = path.join(__dirname, '../frontend/storybook-static');
+  app.use('/storybook', express.static(storybookPath));
   app.use(express.static(distPath));
   app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 }
