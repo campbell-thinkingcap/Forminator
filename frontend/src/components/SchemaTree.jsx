@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronRight, ChevronLeft, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, X } from 'lucide-react';
 
 const AZURE_API = `${import.meta.env.VITE_API_BASE ?? '/api'}/azure/schemas`;
 
@@ -167,13 +167,35 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
 
   return (
     <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
-      <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
         <input
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder={`Search ${total} schemas...`}
-          style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', width: '100%' }}
+          style={{ fontSize: '0.72rem', padding: '0.3rem 1.4rem 0.3rem 0.6rem', borderRadius: '0.4rem', width: '100%' }}
         />
+        {filter && (
+          <button
+            onClick={() => setFilter('')}
+            title="Clear search"
+            style={{
+              position: 'absolute',
+              right: '0.75rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: '50%',
+            }}
+          >
+            <X size={11} />
+          </button>
+        )}
       </div>
       <div style={{ overflowY: 'auto', flex: 1, padding: '0.4rem 0.5rem' }}>
         {filteredTree.map(node => (
