@@ -1,12 +1,11 @@
-import { fn } from '@storybook/test';
 import DynamicForm from './DynamicForm';
 
 export default {
   title: 'Forminator/DynamicForm',
   component: DynamicForm,
   args: {
-    onChange: fn(),
-    onFieldFocus: fn(),
+    onChange: () => {},
+    onFieldFocus: () => {},
   },
 };
 

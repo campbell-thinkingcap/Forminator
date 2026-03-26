@@ -1,12 +1,11 @@
-import { fn } from '@storybook/test';
 import FormField from './FormField';
 
 export default {
   title: 'Forminator/FormField',
   component: FormField,
   args: {
-    onChange: fn(),
-    onFocus: fn(),
+    onChange: () => {},
+    onFocus: () => {},
   },
 };
 
