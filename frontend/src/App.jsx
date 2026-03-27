@@ -5,7 +5,24 @@ import JsonHighlight from './components/JsonHighlight';
 import ApiDocs from './components/ApiDocs';
 import SchemaTree from './components/SchemaTree';
 import LoginPage from './components/LoginPage';
-import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut } from 'lucide-react';
+import ChatPanel from './components/ChatPanel';
+import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare } from 'lucide-react';
+
+function deepMerge(target, source) {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] !== null &&
+      typeof source[key] === 'object' &&
+      !Array.isArray(source[key])
+    ) {
+      result[key] = deepMerge(result[key] ?? {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
@@ -22,6 +39,7 @@ function App() {
   const [splitPercent, setSplitPercent] = useState(40);
   const [activeField, setActiveField] = useState(null);
   const [view, setView] = useState('form');
+  const [leftPanel, setLeftPanel] = useState('schema');
   const [selectedBlobDir, setSelectedBlobDir] = useState(null);
   const workspaceRef = useRef(null);
 
@@ -74,6 +92,7 @@ function App() {
   const handleSchemaSelect = async (name) => {
     setLoading(true);
     setSelectedSchemaName(name);
+    setLeftPanel('schema');
     try {
       const res = await axios.get(`${API_BASE}/schemas/${name}`);
       setSchema(res.data);
@@ -84,6 +103,10 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFieldUpdates = (updates) => {
+    setFormData(prev => deepMerge(prev, updates));
   };
 
   const handleFormChange = (newData) => {
@@ -176,14 +199,34 @@ function App() {
         <div className="workspace" ref={workspaceRef} style={{ display: view === 'form' ? 'flex' : 'none', flex: 1, minWidth: 0 }}>
         <aside className="schema-panel" style={{ width: `${splitPercent}%` }}>
           <div className="schema-panel-header">
-            <Braces size={16} />
-            <span>Schema Definition</span>
+            <div className="panel-tabs">
+              <button
+                className={`panel-tab${leftPanel === 'schema' ? ' panel-tab--active' : ''}`}
+                onClick={() => setLeftPanel('schema')}
+              >
+                <Braces size={13} /> Schema
+              </button>
+              <button
+                className={`panel-tab${leftPanel === 'chat' ? ' panel-tab--active' : ''}`}
+                onClick={() => setLeftPanel('chat')}
+              >
+                <MessageSquare size={13} /> Chat
+              </button>
+            </div>
           </div>
           <div className="schema-panel-body">
-            {schema ? (
-              <JsonHighlight value={schema} activeKey={activeField} />
+            {leftPanel === 'schema' ? (
+              schema ? (
+                <JsonHighlight value={schema} activeKey={activeField} />
+              ) : (
+                <span className="schema-panel-empty">No schema loaded</span>
+              )
             ) : (
-              <span className="schema-panel-empty">No schema loaded</span>
+              <ChatPanel
+                schema={schema}
+                currentFormData={formData}
+                onFieldUpdates={handleFieldUpdates}
+              />
             )}
           </div>
         </aside>
