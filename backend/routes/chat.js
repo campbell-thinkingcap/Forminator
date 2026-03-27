@@ -5,33 +5,56 @@ const router = express.Router();
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function buildSystemPrompt(schema, currentFormData) {
-  return `You are a friendly AI assistant helping a user fill out a structured form.
+  // Derive an ordered field list from the schema so the AI has a clear sequence to follow.
+  // Required fields come first, then the rest, all skipping uuid/auto-assigned ones.
+  const required = schema.required ?? [];
+  const allKeys = Object.keys(schema.properties ?? {});
+  const orderedKeys = [
+    ...required,
+    ...allKeys.filter(k => !required.includes(k))
+  ];
 
-The form is defined by this JSON Schema:
-${JSON.stringify(schema, null, 2)}
+  const fieldSummary = orderedKeys.map(key => {
+    const prop = schema.properties[key];
+    const type = Array.isArray(prop.type) ? prop.type.filter(t => t !== 'null').join('|') : prop.type;
+    const isRequired = required.includes(key);
+    const isUuid = prop.format === 'uuid';
+    const enumVals = prop.enum ? `Options: ${prop.enum.join(', ')}` : '';
+    const desc = prop.description ? prop.description.split('.')[0] : ''; // first sentence only
+    return `- ${key} [${type}${isRequired ? ', REQUIRED' : ''}${isUuid ? ', AUTO-ASSIGNED' : ''}] ${enumVals} ${desc}`.trim();
+  }).join('\n');
 
-Current form data (already filled by the user — do not ask about these again):
-${JSON.stringify(currentFormData || {}, null, 2)}
+  const filled = Object.keys(currentFormData || {}).filter(
+    k => currentFormData[k] !== null && currentFormData[k] !== undefined && currentFormData[k] !== ''
+  );
 
-Instructions:
-- When the conversation starts, greet the user briefly and ask the first unfilled question
-- Ask ONE question at a time
-- For enum fields, clearly list the valid options (e.g. "Room or Virtual?")
-- For boolean fields, ask a simple yes/no question
-- For nested objects (like "defaultLocation"), work through their sub-fields in a natural sequence
-- Skip fields with format "uuid" — they are auto-assigned
-- Skip fields that already have a value in the current form data above
-- When the user provides a value, extract it and include it in fieldUpdates
-- For nested field updates use the full nested object: {"defaultLocation": {"room": "Conference A"}}
-- When all fields are collected, congratulate the user warmly and confirm the form is complete
-- Keep your messages concise and conversational
+  return `You are a guided form assistant. Your job is to collect information from the user by asking precise, specific questions — one at a time — based on the schema below. You are NOT a general chat assistant. Do not ask open-ended questions like "what would you like to do?" or "how can I help?". Every question you ask must target a specific field.
 
-CRITICAL RULE: You MUST respond with valid JSON only, in exactly this format:
-{"message": "Your conversational response here", "fieldUpdates": {}}
+FORM: "${schema.title ?? 'Form'}"
+${schema.description ? `Description: ${schema.description.split('.')[0]}.` : ''}
 
-- "message": your response/question to the user
-- "fieldUpdates": only fields the user provided in their most recent message (empty object {} if none)
-- Never include any text outside the JSON object`;
+FIELDS TO COLLECT (in this order):
+${fieldSummary}
+
+ALREADY FILLED (do not ask about these):
+${filled.length ? filled.join(', ') : 'none'}
+
+RULES:
+1. Start immediately with the first unfilled, non-AUTO-ASSIGNED field. No preamble. No "What would you like to do?".
+2. Name the field you are asking about so the user knows exactly what is needed.
+3. For enum fields, always list the valid options explicitly.
+4. For boolean fields, state the default and ask for confirmation or override.
+5. For nested objects, introduce the section briefly then ask about each sub-field in turn.
+6. Do not repeat questions for already-filled fields.
+7. Accept natural-language answers and extract the correct typed value (e.g. "yes" → true, "room" → "Room").
+8. After extracting a value, immediately ask the next unfilled field — no filler commentary.
+9. When every non-AUTO-ASSIGNED field has a value, say "All done — the form is complete." and stop.
+
+CRITICAL: Respond with valid JSON only, no text outside it:
+{"message": "Your question or response here", "fieldUpdates": {}}
+
+"fieldUpdates" contains only the field(s) the user just answered (empty {} if none yet).
+For nested fields: {"defaultLocation": {"room": "Conference A"}}`;
 }
 
 router.post('/', async (req, res) => {
