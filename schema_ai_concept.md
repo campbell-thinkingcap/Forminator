@@ -1,0 +1,245 @@
+# JSON Schema: Designing for AI-Assisted User Prompting
+
+A guide to using JSON Schema properties to help an AI assistant collect information from users in a logical, concise, and context-aware way.
+
+---
+
+## Core Descriptive Properties
+
+These built-in properties give the AI semantic context about each field.
+
+| Property | Purpose |
+|---|---|
+| `title` | A short, human-readable name for the field or schema. Tells the AI what the field *is*. |
+| `description` | The most powerful property for AI guidance. Explains purpose, expected format, business rules, and caveats. The AI uses this to phrase its question intelligently. |
+| `examples` | Concrete sample values. Helps the AI show the user what a valid answer looks like. |
+| `default` | A sensible fallback value. The AI can offer this as a suggestion (e.g. "Leave blank to use X"). |
+
+---
+
+## Validation Properties (double as UX hints)
+
+These properties constrain valid values and implicitly tell the AI how to present the question.
+
+| Property | Purpose |
+|---|---|
+| `enum` | A fixed list of allowed values. The AI knows to present this as a choice rather than free text. |
+| `const` | A single allowed value — useful for hidden/fixed fields the AI shouldn't ask about. |
+| `minimum` / `maximum` | Numeric bounds. The AI can mention the valid range to the user. |
+| `minLength` / `maxLength` | String length constraints (e.g. "must be under 160 characters"). |
+| `pattern` | A regex the value must match (e.g. a postal code format). The AI can describe the expected format. |
+| `format` | Semantic format hints like `"email"`, `"date"`, `"uri"`, `"uuid"`. Tells the AI *how* to prompt for the value. |
+
+---
+
+## Structural / Flow Properties
+
+These control which fields are required, and when.
+
+| Property | Purpose |
+|---|---|
+| `required` | Array of mandatory field names. The AI always asks for these and can skip optional ones unless relevant. |
+| `dependentRequired` | Makes one field required only when another field is present. |
+| `if` / `then` / `else` | Conditional logic. Lets the AI skip irrelevant questions based on previous answers. |
+| `readOnly` | Signals the field should be displayed but not collected. |
+| `writeOnly` | Signals the field should be collected but not displayed back. |
+
+---
+
+## Custom Extension Properties
+
+JSON Schema allows additional properties by convention. Use an `x-` prefix to define AI-specific hints.
+
+| Property | Purpose |
+|---|---|
+| `x-prompt` | The exact question the AI should ask the user. |
+| `x-order` | Controls the sequence of questions. |
+| `x-group` | Lets the AI batch related questions together. |
+| `x-hint` | Extra guidance to include alongside the question. |
+| `x-depends-on` | A simpler human-readable alternative to `if/then` for conditional fields. |
+
+---
+
+## Full Example: Flight Booking Schema
+
+This example combines all of the above to guide an AI through collecting flight booking information.
+
+```json
+{
+  "type": "object",
+  "title": "Flight Booking Request",
+  "description": "Collects the information needed to search for a flight.",
+  "required": ["tripType", "origin", "destination", "departureDate", "passengers"],
+  "properties": {
+    "tripType": {
+      "type": "string",
+      "title": "Trip Type",
+      "description": "Whether the user is booking a one-way or round-trip flight.",
+      "enum": ["one-way", "round-trip"],
+      "x-prompt": "Is this a one-way or round-trip flight?",
+      "x-order": 1
+    },
+    "origin": {
+      "type": "string",
+      "title": "Origin Airport",
+      "description": "IATA code or city name for the departure location.",
+      "examples": ["YYZ", "Toronto", "JFK"],
+      "x-prompt": "Where are you flying from?",
+      "x-hint": "You can use a city name or airport code (e.g. Toronto or YYZ)",
+      "x-order": 2
+    },
+    "destination": {
+      "type": "string",
+      "title": "Destination Airport",
+      "description": "IATA code or city name for the arrival location.",
+      "examples": ["LHR", "London", "CDG"],
+      "x-prompt": "Where are you flying to?",
+      "x-order": 3
+    },
+    "departureDate": {
+      "type": "string",
+      "format": "date",
+      "title": "Departure Date",
+      "description": "The date the user departs. Must be today or in the future.",
+      "x-prompt": "What date are you departing?",
+      "x-order": 4
+    },
+    "returnDate": {
+      "type": "string",
+      "format": "date",
+      "title": "Return Date",
+      "description": "The date the user will return. Only applicable for round-trip bookings.",
+      "x-prompt": "What date will you be returning?",
+      "x-depends-on": "tripType=round-trip",
+      "x-order": 5
+    },
+    "passengers": {
+      "type": "integer",
+      "title": "Number of Passengers",
+      "description": "Total number of passengers including the primary traveller.",
+      "minimum": 1,
+      "maximum": 9,
+      "default": 1,
+      "x-prompt": "How many passengers are travelling?",
+      "x-order": 6
+    },
+    "passengerType": {
+      "type": "string",
+      "title": "Passenger Type",
+      "enum": ["adult", "minor"],
+      "x-prompt": "Is the primary passenger an adult or a minor?",
+      "x-order": 7
+    },
+    "guardianName": {
+      "type": "string",
+      "title": "Guardian Name",
+      "description": "Full name of the accompanying guardian. Required when the primary passenger is a minor.",
+      "x-prompt": "Please provide the name of the accompanying guardian.",
+      "x-depends-on": "passengerType=minor",
+      "x-order": 8
+    },
+    "guardianContact": {
+      "type": "string",
+      "title": "Guardian Contact",
+      "description": "Phone number of the accompanying guardian. Required when the primary passenger is a minor.",
+      "x-prompt": "What is the guardian's contact number?",
+      "x-depends-on": "passengerType=minor",
+      "x-order": 9
+    }
+  }
+}
+```
+
+---
+
+## Conditional Logic with `if / then / else`
+
+Use `if/then/else` to make fields required or modify their behaviour based on the value of another field.
+
+### Basic Example: Round-trip requires a return date
+
+```json
+{
+  "if": {
+    "properties": {
+      "tripType": { "const": "round-trip" }
+    },
+    "required": ["tripType"]
+  },
+  "then": {
+    "required": ["returnDate"],
+    "properties": {
+      "returnDate": {
+        "description": "Required. Must be after the departure date."
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "returnDate": {
+        "description": "Not applicable for one-way trips. Do not ask for this."
+      }
+    }
+  }
+}
+```
+
+### How the AI should interpret this
+
+| `tripType` value | Behaviour |
+|---|---|
+| `"round-trip"` | `returnDate` becomes **required** — the AI must ask for it |
+| `"one-way"` | `returnDate` is **irrelevant** — the AI skips it entirely |
+| *(not yet answered)* | The AI asks for `tripType` first before proceeding |
+
+---
+
+## Stacking Multiple Conditions with `allOf`
+
+Use `allOf` with multiple `if/then` blocks for independent conditional rules. This is cleaner than deeply nesting `if/then` inside each other.
+
+```json
+{
+  "allOf": [
+    {
+      "if": {
+        "properties": { "tripType": { "const": "round-trip" } },
+        "required": ["tripType"]
+      },
+      "then": {
+        "required": ["returnDate"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "passengerType": { "const": "minor" } },
+        "required": ["passengerType"]
+      },
+      "then": {
+        "required": ["guardianName", "guardianContact"],
+        "properties": {
+          "guardianName": {
+            "type": "string",
+            "x-prompt": "Please provide the name of the accompanying guardian."
+          },
+          "guardianContact": {
+            "type": "string",
+            "x-prompt": "What is the guardian's contact number?"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Key Takeaways
+
+- Use **`description`** to explain the intent and rules behind every field — this is the single most impactful property for AI understanding.
+- Use **`x-prompt`** to give the AI the exact question wording, removing ambiguity.
+- Use **`x-order`** to control the conversational flow so questions feel natural and sequential.
+- Use **`enum`** to signal multiple-choice fields so the AI presents options rather than asking for free text.
+- Use **`if/then/else`** to make the schema context-aware, so the AI only asks relevant questions.
+- Use **`allOf`** to stack multiple independent conditions cleanly without deeply nested logic.
