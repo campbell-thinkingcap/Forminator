@@ -270,19 +270,17 @@ function App() {
                 onFieldUpdates={handleFieldUpdates}
               />
             )}
-            {leftPanel === 'edit' && (
-              <>
-                {schema && schema !== originalSchemaRef.current && (
-                  <div className="edit-panel-reset-bar">
-                    <span className="edit-panel-reset-label">Schema has unsaved edits</span>
-                    <button className="secondary edit-panel-reset-btn" onClick={handleSchemaReset}>
-                      <RotateCcw size={12} /> Reset
-                    </button>
-                  </div>
-                )}
-                <EditPanel schema={schema} onSchemaEdit={handleSchemaEdit} />
-              </>
-            )}
+            <div style={{ display: leftPanel === 'edit' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              {schema && schema !== originalSchemaRef.current && (
+                <div className="edit-panel-reset-bar">
+                  <span className="edit-panel-reset-label">Schema has unsaved edits</span>
+                  <button className="secondary edit-panel-reset-btn" onClick={handleSchemaReset}>
+                    <RotateCcw size={12} /> Reset
+                  </button>
+                </div>
+              )}
+              <EditPanel schema={schema} onSchemaEdit={handleSchemaEdit} />
+            </div>
           </div>
         </aside>
 
