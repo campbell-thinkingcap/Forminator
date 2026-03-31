@@ -256,7 +256,7 @@ function App() {
               </button>
             </div>
           </div>
-          <div className="schema-panel-body">
+          <div className={`schema-panel-body${leftPanel !== 'schema' ? ' schema-panel-body--no-scroll' : ''}`}>
             {leftPanel === 'schema' && (
               schema
                 ? <JsonHighlight value={schema} activeKey={activeField} />
