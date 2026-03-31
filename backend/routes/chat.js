@@ -19,14 +19,20 @@ function buildSystemPrompt(schema, currentFormData) {
     const type = Array.isArray(prop.type) ? prop.type.filter(t => t !== 'null').join('|') : prop.type;
     const isRequired = required.includes(key);
     const isUuid = prop.format === 'uuid';
+    const isConst = 'const' in prop;
     const enumVals = prop.enum ? `Options: ${prop.enum.join(', ')}` : '';
     const desc = prop.description ? prop.description.split('.')[0] : ''; // first sentence only
-    return `- ${key} [${type}${isRequired ? ', REQUIRED' : ''}${isUuid ? ', AUTO-ASSIGNED' : ''}] ${enumVals} ${desc}`.trim();
+    return `- ${key} [${type}${isRequired ? ', REQUIRED' : ''}${isUuid || isConst ? ', AUTO-ASSIGNED' : ''}] ${enumVals} ${desc}`.trim();
   }).join('\n');
 
-  const filled = Object.keys(currentFormData || {}).filter(
-    k => currentFormData[k] !== null && currentFormData[k] !== undefined && currentFormData[k] !== ''
-  );
+  // Const fields are always pre-filled — never ask for them
+  const constKeys = orderedKeys.filter(k => 'const' in (schema.properties[k] ?? {}));
+  const filled = [
+    ...constKeys,
+    ...Object.keys(currentFormData || {}).filter(
+      k => !constKeys.includes(k) && currentFormData[k] !== null && currentFormData[k] !== undefined && currentFormData[k] !== ''
+    )
+  ];
 
   return `You are a guided form assistant. Your job is to collect information from the user by asking precise, specific questions — one at a time — based on the schema below. You are NOT a general chat assistant. Do not ask open-ended questions like "what would you like to do?" or "how can I help?". Every question you ask must target a specific field.
 

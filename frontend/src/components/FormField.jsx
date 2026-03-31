@@ -1,6 +1,16 @@
 import React from 'react';
 
 const FormField = ({ label, type, value, onChange, onFocus, description, schema, required }) => {
+  if ('const' in schema) {
+    return (
+      <div className="form-group">
+        <label>{label}</label>
+        {description && <p className="description">{description}</p>}
+        <div className="uuid-display" onClick={onFocus}>{String(schema.const)}</div>
+      </div>
+    );
+  }
+
   if (schema.format === 'uuid') {
     return (
       <div className="form-group">

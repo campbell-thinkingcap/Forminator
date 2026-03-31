@@ -8,6 +8,20 @@ import LoginPage from './components/LoginPage';
 import ChatPanel from './components/ChatPanel';
 import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare } from 'lucide-react';
 
+function getConstDefaults(schema) {
+  if (!schema?.properties) return {};
+  const defaults = {};
+  for (const [key, prop] of Object.entries(schema.properties)) {
+    if ('const' in prop) {
+      defaults[key] = prop.const;
+    } else if (prop.type === 'object') {
+      const nested = getConstDefaults(prop);
+      if (Object.keys(nested).length > 0) defaults[key] = nested;
+    }
+  }
+  return defaults;
+}
+
 function deepMerge(target, source) {
   const result = { ...target };
   for (const key of Object.keys(source)) {
@@ -96,7 +110,7 @@ function App() {
     try {
       const res = await axios.get(`${API_BASE}/schemas/${name}`);
       setSchema(res.data);
-      setFormData({}); // Reset form
+      setFormData(getConstDefaults(res.data));
       setError(null);
     } catch (err) {
       setError('Failed to load schema.');
@@ -167,7 +181,7 @@ function App() {
               const res = await axios.get(`${API_BASE}/azure/schemas/${azureSchema.blobDir}`);
               setSchema(res.data);
               setSelectedSchemaName(azureSchema.blobDir);
-              setFormData({});
+              setFormData(getConstDefaults(res.data));
               setError(null);
             } catch {
               setError('Failed to load Azure schema.');
