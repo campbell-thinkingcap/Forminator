@@ -518,7 +518,6 @@ button.secondary:hover {
 }
 
 .chat-bubble {
-  max-width: 82%;
   padding: 0.55rem 0.8rem;
   border-radius: 1rem;
   font-size: 0.82rem;
@@ -612,6 +611,77 @@ button.secondary:hover {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Enum option selectors in chat */
+.chat-bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  max-width: 82%;
+}
+
+.chat-enum-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.chat-enum-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.chat-enum-option:hover {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Radio indicator dot */
+.chat-enum-radio {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid #64748b;
+  display: inline-block;
+  transition: border-color 0.15s;
+}
+
+.chat-enum-option:hover .chat-enum-radio {
+  border-color: var(--primary);
+}
+
+/* Checkbox variant */
+.chat-enum-option--check {
+  cursor: pointer;
+}
+
+.chat-enum-option--check input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.chat-enum-confirm {
+  align-self: flex-end;
+  margin-top: 0.15rem;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.78rem;
+  border-radius: 0.5rem;
 }
 
 /* Animations */

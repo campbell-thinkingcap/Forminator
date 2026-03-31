@@ -4,6 +4,42 @@ const router = express.Router();
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Returns enum metadata for the next unfilled, non-auto-assigned field, or null.
+// multiSelect is true when the field type is 'array' (pick many from items.enum).
+function getPendingEnumField(schema, currentFormData, fieldUpdates) {
+  const required = schema.required ?? [];
+  const allKeys = Object.keys(schema.properties ?? {});
+  const orderedKeys = [...required, ...allKeys.filter(k => !required.includes(k))];
+
+  const constKeys = orderedKeys.filter(k => 'const' in (schema.properties[k] ?? {}));
+  const effectiveFilled = new Set([
+    ...constKeys,
+    ...Object.keys(currentFormData || {}).filter(k => {
+      const v = currentFormData[k];
+      return v !== null && v !== undefined && v !== '';
+    }),
+    ...Object.keys(fieldUpdates || {}).filter(k => {
+      const v = (fieldUpdates || {})[k];
+      return v !== null && v !== undefined && v !== '';
+    })
+  ]);
+
+  for (const key of orderedKeys) {
+    const prop = schema.properties[key];
+    const isAutoAssigned = prop.format === 'uuid' || 'const' in prop;
+    if (isAutoAssigned || effectiveFilled.has(key)) continue;
+
+    if (prop.enum) {
+      return { enumOptions: prop.enum, multiSelect: false };
+    }
+    if (prop.type === 'array' && prop.items?.enum) {
+      return { enumOptions: prop.items.enum, multiSelect: true };
+    }
+    break; // First pending field has no enum — stop
+  }
+  return null;
+}
+
 function buildSystemPrompt(schema, currentFormData) {
   // Derive an ordered field list from the schema so the AI has a clear sequence to follow.
   // Required fields come first, then the rest, all skipping uuid/auto-assigned ones.
@@ -102,9 +138,12 @@ router.post('/', async (req, res) => {
       }
     }
 
+    const fieldUpdates = parsed?.fieldUpdates ?? {};
+    const enumField = getPendingEnumField(schema, currentFormData, fieldUpdates);
     res.json({
       message: parsed?.message ?? rawText,
-      fieldUpdates: parsed?.fieldUpdates ?? {}
+      fieldUpdates,
+      ...(enumField ?? {})
     });
   } catch (err) {
     console.error('Chat error:', err.message);
