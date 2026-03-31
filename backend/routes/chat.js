@@ -35,7 +35,10 @@ function getPendingEnumField(schema, currentFormData, fieldUpdates) {
     if (prop.type === 'array' && prop.items?.enum) {
       return { enumOptions: prop.items.enum, multiSelect: true };
     }
-    break; // First pending field has no enum — stop
+    if (prop.type === 'boolean') {
+      return { enumOptions: ['Yes', 'No'], multiSelect: false };
+    }
+    break; // First pending field has no interactive options — stop
   }
   return null;
 }
