@@ -57,6 +57,7 @@ function App() {
   const [leftPanel, setLeftPanel] = useState('schema');
   const [formTab, setFormTab] = useState('form');
   const [selectedBlobDir, setSelectedBlobDir] = useState(null);
+  const [schemaEditVersion, setSchemaEditVersion] = useState(0);
   const workspaceRef = useRef(null);
   const originalSchemaRef = useRef(null);
 
@@ -135,12 +136,14 @@ function App() {
   const handleSchemaEdit = (newSchema) => {
     setSchema(newSchema);
     setFormData(getConstDefaults(newSchema));
+    setSchemaEditVersion(v => v + 1);
   };
 
   const handleSchemaReset = () => {
     if (originalSchemaRef.current) {
       setSchema(originalSchemaRef.current);
       setFormData(getConstDefaults(originalSchemaRef.current));
+      setSchemaEditVersion(v => v + 1);
     }
   };
 
@@ -261,6 +264,7 @@ function App() {
             )}
             {leftPanel === 'chat' && (
               <ChatPanel
+                key={schemaEditVersion}
                 schema={schema}
                 currentFormData={formData}
                 onFieldUpdates={handleFieldUpdates}
