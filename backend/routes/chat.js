@@ -12,16 +12,17 @@ function getPendingEnumField(schema, currentFormData, fieldUpdates) {
   const orderedKeys = [...required, ...allKeys.filter(k => !required.includes(k))];
 
   const constKeys = orderedKeys.filter(k => 'const' in (schema.properties[k] ?? {}));
+
+  // A value counts as filled only if it is a real, non-empty answer.
+  // Boolean false is excluded: it is indistinguishable from an unchecked default,
+  // so boolean fields always stay in the prompt queue until the user explicitly
+  // picks Yes or No via the radio group.
+  const isFilled = (v) => v !== null && v !== undefined && v !== '' && v !== false;
+
   const effectiveFilled = new Set([
     ...constKeys,
-    ...Object.keys(currentFormData || {}).filter(k => {
-      const v = currentFormData[k];
-      return v !== null && v !== undefined && v !== '';
-    }),
-    ...Object.keys(fieldUpdates || {}).filter(k => {
-      const v = (fieldUpdates || {})[k];
-      return v !== null && v !== undefined && v !== '';
-    })
+    ...Object.keys(currentFormData || {}).filter(k => isFilled(currentFormData[k])),
+    ...Object.keys(fieldUpdates || {}).filter(k => isFilled((fieldUpdates || {})[k]))
   ]);
 
   for (const key of orderedKeys) {
@@ -64,12 +65,17 @@ function buildSystemPrompt(schema, currentFormData) {
     return `- ${key} [${type}${isRequired ? ', REQUIRED' : ''}${isUuid || isConst ? ', AUTO-ASSIGNED' : ''}] ${enumVals} ${desc}`.trim();
   }).join('\n');
 
-  // Const fields are always pre-filled — never ask for them
+  // Const fields are always pre-filled — never ask for them.
+  // Boolean false is not counted as filled (indistinguishable from unchecked default).
   const constKeys = orderedKeys.filter(k => 'const' in (schema.properties[k] ?? {}));
   const filled = [
     ...constKeys,
     ...Object.keys(currentFormData || {}).filter(
-      k => !constKeys.includes(k) && currentFormData[k] !== null && currentFormData[k] !== undefined && currentFormData[k] !== ''
+      k => !constKeys.includes(k) &&
+           currentFormData[k] !== null &&
+           currentFormData[k] !== undefined &&
+           currentFormData[k] !== '' &&
+           currentFormData[k] !== false
     )
   ];
 
