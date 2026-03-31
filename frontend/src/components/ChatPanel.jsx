@@ -10,12 +10,19 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
   const [loading, setLoading] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
   const schemaKeyRef = useRef(null);
 
   // Scroll to bottom whenever messages or loading state changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // Return focus to the input after each assistant response
+  // (no-op when input is disabled, e.g. while enum options are shown)
+  useEffect(() => {
+    if (!loading) inputRef.current?.focus();
+  }, [loading]);
 
   // Reset checkbox selections when a new message arrives
   useEffect(() => {
@@ -191,6 +198,7 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
           placeholder={activeEnumOptions ? 'Select an option above…' : 'Type your answer…'}
           disabled={loading || !schema || !!activeEnumOptions}
           className="chat-input"
+          ref={inputRef}
         />
         <button
           onClick={handleSend}
