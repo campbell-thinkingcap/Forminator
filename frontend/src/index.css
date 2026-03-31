@@ -704,6 +704,49 @@ button.secondary:hover {
   border-radius: 0.5rem;
 }
 
+/* Edit panel */
+.edit-panel-reset-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  margin-bottom: 0.5rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+.edit-panel-reset-label {
+  font-size: 0.72rem;
+  color: #f59e0b;
+}
+
+.edit-panel-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  border-radius: 0.4rem;
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+}
+
+.edit-panel-reset-btn:hover {
+  background: rgba(245, 158, 11, 0.12);
+  transform: none;
+}
+
+.chat-schema-applied {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: #10b981;
+}
+
 /* Animations */
 @keyframes spin {
   from { transform: rotate(0deg); }

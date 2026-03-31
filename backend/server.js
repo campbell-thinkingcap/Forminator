@@ -7,6 +7,7 @@ const https = require('https');
 const dataRouter = require('./routes/data');
 const azureRouter = require('./routes/azure');
 const chatRouter = require('./routes/chat');
+const chatEditRouter = require('./routes/chatEdit');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/data', dataRouter);
 app.use('/api/azure', azureRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/chat/edit', chatEditRouter);
 
 const SCHEMAS_DIR = path.join(__dirname, '../schemas');
 

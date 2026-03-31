@@ -6,7 +6,8 @@ import ApiDocs from './components/ApiDocs';
 import SchemaTree from './components/SchemaTree';
 import LoginPage from './components/LoginPage';
 import ChatPanel from './components/ChatPanel';
-import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare } from 'lucide-react';
+import EditPanel from './components/EditPanel';
+import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw } from 'lucide-react';
 
 function getConstDefaults(schema) {
   if (!schema?.properties) return {};
@@ -57,6 +58,7 @@ function App() {
   const [formTab, setFormTab] = useState('form');
   const [selectedBlobDir, setSelectedBlobDir] = useState(null);
   const workspaceRef = useRef(null);
+  const originalSchemaRef = useRef(null);
 
   const login = (u) => { localStorage.setItem('forminator_user', JSON.stringify(u)); setUser(u); };
   const logout = () => { localStorage.removeItem('forminator_user'); setUser(null); };
@@ -110,6 +112,7 @@ function App() {
     setLeftPanel('schema');
     try {
       const res = await axios.get(`${API_BASE}/schemas/${name}`);
+      originalSchemaRef.current = res.data;
       setSchema(res.data);
       setFormData(getConstDefaults(res.data));
       setFormTab('form');
@@ -127,6 +130,18 @@ function App() {
 
   const handleFormChange = (newData) => {
     setFormData(newData);
+  };
+
+  const handleSchemaEdit = (newSchema) => {
+    setSchema(newSchema);
+    setFormData(getConstDefaults(newSchema));
+  };
+
+  const handleSchemaReset = () => {
+    if (originalSchemaRef.current) {
+      setSchema(originalSchemaRef.current);
+      setFormData(getConstDefaults(originalSchemaRef.current));
+    }
   };
 
   return (
@@ -181,6 +196,7 @@ function App() {
             setView('form');
             try {
               const res = await axios.get(`${API_BASE}/azure/schemas/${azureSchema.blobDir}`);
+              originalSchemaRef.current = res.data;
               setSchema(res.data);
               setSelectedSchemaName(azureSchema.blobDir);
               setFormData(getConstDefaults(res.data));
@@ -229,21 +245,39 @@ function App() {
               >
                 <MessageSquare size={13} /> Chat
               </button>
+              <button
+                className={`panel-tab${leftPanel === 'edit' ? ' panel-tab--active' : ''}`}
+                onClick={() => setLeftPanel('edit')}
+              >
+                <Wand2 size={13} /> Edit
+              </button>
             </div>
           </div>
           <div className="schema-panel-body">
-            {leftPanel === 'schema' ? (
-              schema ? (
-                <JsonHighlight value={schema} activeKey={activeField} />
-              ) : (
-                <span className="schema-panel-empty">No schema loaded</span>
-              )
-            ) : (
+            {leftPanel === 'schema' && (
+              schema
+                ? <JsonHighlight value={schema} activeKey={activeField} />
+                : <span className="schema-panel-empty">No schema loaded</span>
+            )}
+            {leftPanel === 'chat' && (
               <ChatPanel
                 schema={schema}
                 currentFormData={formData}
                 onFieldUpdates={handleFieldUpdates}
               />
+            )}
+            {leftPanel === 'edit' && (
+              <>
+                {schema && schema !== originalSchemaRef.current && (
+                  <div className="edit-panel-reset-bar">
+                    <span className="edit-panel-reset-label">Schema has unsaved edits</span>
+                    <button className="secondary edit-panel-reset-btn" onClick={handleSchemaReset}>
+                      <RotateCcw size={12} /> Reset
+                    </button>
+                  </div>
+                )}
+                <EditPanel schema={schema} onSchemaEdit={handleSchemaEdit} />
+              </>
             )}
           </div>
         </aside>
