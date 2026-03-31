@@ -108,9 +108,10 @@ router.post('/', async (req, res) => {
 
   // Anthropic requires conversation to start with a user message.
   // We prepend a hidden "Start" message that is never shown in the UI.
+  // Strip any UI-only metadata (enumOptions, multiSelect) — Anthropic only accepts role + content.
   const apiMessages = [
     { role: 'user', content: 'Start' },
-    ...messages
+    ...messages.map(({ role, content }) => ({ role, content }))
   ];
 
   try {
