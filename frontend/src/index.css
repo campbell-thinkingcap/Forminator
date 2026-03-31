@@ -38,13 +38,23 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2rem;
-  gap: 2rem;
-  flex-wrap: wrap;
+  max-height: 100px;
+  margin-bottom: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  gap: 1rem;
+  flex-wrap: nowrap;
 }
 
 .app-header h1 {
   text-align: left;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.app-header .subtitle {
+  font-size: 0.75rem;
+  margin: 0;
 }
 
 
