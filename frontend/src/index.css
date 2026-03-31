@@ -439,6 +439,16 @@ button.secondary:hover {
   gap: 0.25rem;
 }
 
+.form-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
 .panel-tab {
   display: flex;
   align-items: center;

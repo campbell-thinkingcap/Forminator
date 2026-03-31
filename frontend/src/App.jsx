@@ -54,6 +54,7 @@ function App() {
   const [activeField, setActiveField] = useState(null);
   const [view, setView] = useState('form');
   const [leftPanel, setLeftPanel] = useState('schema');
+  const [formTab, setFormTab] = useState('form');
   const [selectedBlobDir, setSelectedBlobDir] = useState(null);
   const workspaceRef = useRef(null);
 
@@ -111,6 +112,7 @@ function App() {
       const res = await axios.get(`${API_BASE}/schemas/${name}`);
       setSchema(res.data);
       setFormData(getConstDefaults(res.data));
+      setFormTab('form');
       setError(null);
     } catch (err) {
       setError('Failed to load schema.');
@@ -182,6 +184,7 @@ function App() {
               setSchema(res.data);
               setSelectedSchemaName(azureSchema.blobDir);
               setFormData(getConstDefaults(res.data));
+              setFormTab('form');
               setError(null);
             } catch {
               setError('Failed to load Azure schema.');
@@ -253,36 +256,48 @@ function App() {
               <div className="loader">Loading Schema...</div>
             </div>
           ) : schema ? (
-            <div className="fade-in">
-              <div className="card">
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <h2>{schema.title}</h2>
-                  <a
-                    href={`${API_BASE}/data/${selectedSchemaName}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#818cf8', textDecoration: 'none', whiteSpace: 'nowrap', marginTop: '0.25rem' }}
-                  >
-                    <ExternalLink size={13} />
-                    API
-                  </a>
-                </div>
-                <p className="description" style={{ marginBottom: '2rem' }}>{schema.description}</p>
-                <DynamicForm
-                  schema={schema}
-                  data={formData}
-                  onChange={handleFormChange}
-                  onFieldFocus={setActiveField}
-                />
+            <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div className="form-tab-bar">
+                <button
+                  className={`panel-tab${formTab === 'form' ? ' panel-tab--active' : ''}`}
+                  onClick={() => setFormTab('form')}
+                >
+                  <LayoutTemplate size={13} /> Form
+                </button>
+                <button
+                  className={`panel-tab${formTab === 'json' ? ' panel-tab--active' : ''}`}
+                  onClick={() => setFormTab('json')}
+                >
+                  <Code size={13} /> JSON
+                </button>
+                <a
+                  href={`${API_BASE}/data/${selectedSchemaName}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#818cf8', textDecoration: 'none' }}
+                >
+                  <ExternalLink size={13} /> API
+                </a>
               </div>
 
-              <div className="json-preview fade-in">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#94a3b8' }}>
-                  <Code size={18} />
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Generated JSON Output</span>
+              {formTab === 'form' && (
+                <div className="card fade-in">
+                  <h2 style={{ marginBottom: '0.25rem' }}>{schema.title}</h2>
+                  <p className="description" style={{ marginBottom: '2rem' }}>{schema.description}</p>
+                  <DynamicForm
+                    schema={schema}
+                    data={formData}
+                    onChange={handleFormChange}
+                    onFieldFocus={setActiveField}
+                  />
                 </div>
-                <pre>{JSON.stringify(formData, null, 2)}</pre>
-              </div>
+              )}
+
+              {formTab === 'json' && (
+                <div className="json-preview fade-in">
+                  <pre>{JSON.stringify(formData, null, 2)}</pre>
+                </div>
+              )}
             </div>
           ) : (
             !error && <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '3rem' }}>Select a schema to begin</div>
