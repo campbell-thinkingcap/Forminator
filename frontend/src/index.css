@@ -549,6 +549,21 @@ button.secondary:hover {
   word-break: break-word;
 }
 
+.chat-bubble--markdown { padding: 0.65rem 0.9rem; }
+.chat-bubble--markdown p  { margin: 0 0 0.5rem; }
+.chat-bubble--markdown p:last-child { margin-bottom: 0; }
+.chat-bubble--markdown ol,
+.chat-bubble--markdown ul { margin: 0.35rem 0 0.5rem 1.2rem; padding: 0; }
+.chat-bubble--markdown li { margin-bottom: 0.25rem; }
+.chat-bubble--markdown strong { color: #c7d2fe; font-weight: 600; }
+.chat-bubble--markdown code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.78em;
+  background: rgba(99,102,241,0.12);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+}
+
 .chat-message--assistant .chat-bubble {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);

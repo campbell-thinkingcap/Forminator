@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 import { Wand2, Send, User, FlaskConical, Lightbulb } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
@@ -90,7 +91,11 @@ export default function EditPanel({ schema, onSchemaEdit }) {
               {msg.role === 'assistant' ? <Wand2 size={13} /> : <User size={13} />}
             </div>
             <div className="chat-bubble-wrap">
-              <div className="chat-bubble">{msg.content}</div>
+              <div className={`chat-bubble${msg.hintResponse ? ' chat-bubble--markdown' : ''}`}>
+                {msg.hintResponse
+                  ? <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  : msg.content}
+              </div>
               {msg.schemaApplied && (
                 <div className="chat-schema-proposed">
                   <FlaskConical size={11} /> Schema proposed
