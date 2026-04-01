@@ -7,7 +7,7 @@ import SchemaTree from './components/SchemaTree';
 import LoginPage from './components/LoginPage';
 import ChatPanel from './components/ChatPanel';
 import EditPanel from './components/EditPanel';
-import { Code, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw } from 'lucide-react';
+import { Code, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw, Sun, Moon } from 'lucide-react';
 
 function getConstDefaults(schema) {
   if (!schema?.properties) return {};
@@ -45,6 +45,16 @@ function App() {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('forminator_user')) ?? null; } catch { return null; }
   });
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem('forminator_theme');
+    if (stored) return stored === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem('forminator_theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
   const [selectedSchemaName, setSelectedSchemaName] = useState('');
   const [schema, setSchema] = useState(null);
   const [formData, setFormData] = useState({});
@@ -153,6 +163,13 @@ function App() {
           <p className="subtitle">Dynamic Form Generator based on JSON Schema</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            className="secondary sign-out-btn"
+            onClick={() => setDarkMode(d => !d)}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
           <button
             className={view === 'form' ? '' : 'secondary'}
             onClick={() => setView('form')}

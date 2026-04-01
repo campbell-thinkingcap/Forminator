@@ -10,6 +10,32 @@
   --text-muted: #94a3b8;
   --input-bg: rgba(0, 0, 0, 0.2);
   --accent: #10b981;
+  --panel-bg: #0a0a0f;
+  --json-preview-bg: #000;
+  --select-option-bg: #1e1b4b;
+  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --select-option-bg: #f1f5f9;
+  --panel-tab-hover-bg: rgba(0, 0, 0, 0.04);
+}
+
+/* Keep code/schema panels dark in light mode */
+[data-theme="light"] .schema-panel {
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(0, 0, 0, 0.2);
+  --select-option-bg: #1e1b4b;
+  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
 }
 
 * {
@@ -109,7 +135,7 @@ body {
 .schema-panel {
   display: flex;
   flex-direction: column;
-  background: #0a0a0f;
+  background: var(--panel-bg);
   border: 1px solid var(--glass-border);
   border-radius: 1rem;
   overflow: hidden;
@@ -253,7 +279,7 @@ textarea {
 }
 
 select option {
-  background: #1e1b4b;
+  background: var(--select-option-bg);
   color: var(--text-main);
 }
 
@@ -349,7 +375,7 @@ button.secondary:hover {
 
 .json-preview {
   margin-top: 3rem;
-  background: #000;
+  background: var(--json-preview-bg);
   padding: 1.5rem;
   border-radius: 1rem;
   overflow-x: auto;
@@ -471,7 +497,7 @@ button.secondary:hover {
 
 .panel-tab:hover {
   color: #94a3b8;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel-tab-hover-bg);
   transform: none;
 }
 
