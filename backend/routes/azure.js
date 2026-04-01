@@ -61,6 +61,43 @@ router.get('/schemas/*', async (req, res) => {
   }
 });
 
+// Fetch any blob's content by path (used for archive previews)
+router.get('/blob', async (req, res) => {
+  const blobPath = req.query.path;
+  if (!blobPath) return res.status(400).json({ error: 'path query param required' });
+  const container = getContainerClient();
+  const buffer = await container.getBlobClient(blobPath).downloadToBuffer();
+  res.setHeader('Content-Type', 'application/json');
+  res.send(buffer.toString('utf8'));
+});
+
+// Rollback to a specific archived version — archives the current schema first
+router.post('/rollback/*', express.json(), async (req, res) => {
+  const blobDir = req.params[0];
+  const { archivePath } = req.body;
+  if (!archivePath) return res.status(400).json({ error: 'archivePath required' });
+
+  const container = getContainerClient();
+  const currentPath = `${blobDir}/schema.json`;
+
+  // Archive the current schema so the rollback itself is reversible
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const newArchivePath = `${blobDir}/archive/schema-${timestamp}.json`;
+  const currentBuffer = await container.getBlobClient(currentPath).downloadToBuffer();
+  await container.getBlockBlobClient(newArchivePath).upload(currentBuffer, currentBuffer.length, {
+    blobHTTPHeaders: { blobContentType: 'application/json' }
+  });
+
+  // Copy the archived version back to schema.json
+  const archiveBuffer = await container.getBlobClient(archivePath).downloadToBuffer();
+  await container.getBlockBlobClient(currentPath).upload(archiveBuffer, archiveBuffer.length, {
+    overwrite: true,
+    blobHTTPHeaders: { blobContentType: 'application/json' }
+  });
+
+  res.json({ rolledBackTo: archivePath, archivedCurrent: newArchivePath });
+});
+
 // List archived versions for a schema
 router.get('/history/*', async (req, res) => {
   const blobDir = req.params[0];

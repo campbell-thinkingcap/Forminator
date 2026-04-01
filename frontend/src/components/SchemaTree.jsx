@@ -135,6 +135,9 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
 
   const [contextMenu, setContextMenu] = useState(null); // { schema, x, y }
   const [historyModal, setHistoryModal] = useState(null); // { schema, archives } | 'loading'
+  const [selectedArchive, setSelectedArchive] = useState(null); // archive entry
+  const [preview, setPreview] = useState(null); // { content: string } | 'loading' | 'error'
+  const [rollingBack, setRollingBack] = useState(null); // archive.path being rolled back
   const contextMenuRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -184,6 +187,8 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
 
   const openHistory = useCallback(async (schema) => {
     setContextMenu(null);
+    setSelectedArchive(null);
+    setPreview(null);
     setHistoryModal('loading');
     try {
       const res = await fetch(`${AZURE_API}/history/${schema.blobDir}`);
@@ -194,6 +199,43 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
       setHistoryModal({ schema, archives: null });
     }
   }, []);
+
+  const selectArchive = useCallback(async (archive) => {
+    setSelectedArchive(archive);
+    setPreview('loading');
+    try {
+      const res = await fetch(`${AZURE_API}/blob?path=${encodeURIComponent(archive.path)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      // Pretty-print if valid JSON
+      try { setPreview({ content: JSON.stringify(JSON.parse(text), null, 2) }); }
+      catch { setPreview({ content: text }); }
+    } catch {
+      setPreview('error');
+    }
+  }, []);
+
+  const handleRollback = useCallback(async (archive) => {
+    if (!historyModal || historyModal === 'loading') return;
+    setRollingBack(archive.path);
+    try {
+      const res = await fetch(`${AZURE_API}/rollback/${historyModal.schema.blobDir}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archivePath: archive.path }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Reload the schema in the app, then close
+      onSelect(historyModal.schema);
+      setHistoryModal(null);
+      setSelectedArchive(null);
+      setPreview(null);
+    } catch {
+      // Leave modal open so user can see it failed
+    } finally {
+      setRollingBack(null);
+    }
+  }, [historyModal, onSelect]);
 
   const filteredTree = filter.trim() ? flatFilter(tree, filter.toLowerCase()) : tree;
 
@@ -304,7 +346,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
       {/* History modal */}
       {historyModal && (
         <div
-          onClick={() => setHistoryModal(null)}
+          onClick={() => { setHistoryModal(null); setSelectedArchive(null); setPreview(null); }}
           style={{
             position: 'fixed',
             inset: 0,
@@ -321,8 +363,9 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
               background: '#13131a',
               border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: '0.75rem',
-              width: '480px',
-              maxHeight: '70vh',
+              width: '860px',
+              maxWidth: '95vw',
+              height: '72vh',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
@@ -344,54 +387,103 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
                 </span>
               </div>
               <button
-                onClick={() => setHistoryModal(null)}
+                onClick={() => { setHistoryModal(null); setSelectedArchive(null); setPreview(null); }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', padding: '0.15rem', borderRadius: '0.3rem' }}
               >
                 <X size={15} />
               </button>
             </div>
 
-            {/* Body */}
-            <div style={{ overflowY: 'auto', flex: 1, padding: '0.5rem 0' }}>
-              {historyModal === 'loading' ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.78rem', padding: '1.5rem 1rem' }}>
-                  <RefreshCw size={13} className="spin" /> Loading history…
-                </div>
-              ) : historyModal.archives === null ? (
-                <div style={{ color: '#ef4444', fontSize: '0.78rem', padding: '1.5rem 1rem' }}>
-                  Failed to load history.
-                </div>
-              ) : historyModal.archives.length === 0 ? (
-                <div style={{ color: '#475569', fontSize: '0.78rem', padding: '1.5rem 1rem' }}>
-                  No history yet — archived versions will appear here after saving edits.
-                </div>
-              ) : (
-                historyModal.archives.map((archive, i) => (
-                  <div
-                    key={archive.path}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.6rem 1rem',
-                      borderBottom: i < historyModal.archives.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                    }}
-                  >
-                    <FileJson size={13} color="#475569" style={{ flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>
-                        {new Date(archive.lastModified).toLocaleString(undefined, {
-                          year: 'numeric', month: 'long', day: 'numeric',
-                          hour: '2-digit', minute: '2-digit',
-                        })}
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#334155', marginTop: '0.15rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {archive.name}
-                      </div>
-                    </div>
+            {/* Body — split pane */}
+            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+              {/* Left: version list */}
+              <div style={{ width: '260px', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.08)', overflowY: 'auto', padding: '0.5rem 0' }}>
+                {historyModal === 'loading' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1.25rem 1rem' }}>
+                    <RefreshCw size={13} className="spin" /> Loading…
                   </div>
-                ))
-              )}
+                ) : historyModal.archives === null ? (
+                  <div style={{ color: '#ef4444', fontSize: '0.75rem', padding: '1.25rem 1rem' }}>
+                    Failed to load history.
+                  </div>
+                ) : historyModal.archives.length === 0 ? (
+                  <div style={{ color: '#475569', fontSize: '0.75rem', padding: '1.25rem 1rem' }}>
+                    No history yet — archived versions will appear here after saving edits.
+                  </div>
+                ) : (
+                  historyModal.archives.map((archive) => {
+                    const isSelected = selectedArchive?.path === archive.path;
+                    const isRollingBack = rollingBack === archive.path;
+                    return (
+                      <div
+                        key={archive.path}
+                        onClick={() => selectArchive(archive)}
+                        style={{
+                          padding: '0.55rem 0.75rem',
+                          cursor: 'pointer',
+                          background: isSelected ? 'rgba(99,102,241,0.15)' : 'transparent',
+                          borderLeft: isSelected ? '2px solid #818cf8' : '2px solid transparent',
+                          transition: 'background 0.1s',
+                        }}
+                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <div style={{ fontSize: '0.75rem', color: isSelected ? '#c7d2fe' : '#94a3b8', marginBottom: '0.2rem' }}>
+                          {new Date(archive.lastModified).toLocaleString(undefined, {
+                            year: 'numeric', month: 'short', day: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </div>
+                        <div style={{ fontSize: '0.65rem', color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '0.35rem' }}>
+                          {archive.name}
+                        </div>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleRollback(archive); }}
+                          disabled={!!rollingBack}
+                          style={{
+                            fontSize: '0.68rem',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '0.3rem',
+                            background: isRollingBack ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)',
+                            border: '1px solid rgba(99,102,241,0.3)',
+                            color: rollingBack && !isRollingBack ? '#334155' : '#818cf8',
+                            cursor: rollingBack ? 'default' : 'pointer',
+                            opacity: rollingBack && !isRollingBack ? 0.4 : 1,
+                          }}
+                        >
+                          {isRollingBack ? 'Rolling back…' : 'Rollback'}
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Right: preview */}
+              <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '0.75rem 1rem' }}>
+                {!selectedArchive ? (
+                  <div style={{ color: '#334155', fontSize: '0.78rem', paddingTop: '1rem' }}>
+                    Select a version on the left to preview it.
+                  </div>
+                ) : preview === 'loading' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem' }}>
+                    <RefreshCw size={13} className="spin" /> Loading preview…
+                  </div>
+                ) : preview === 'error' ? (
+                  <div style={{ color: '#ef4444', fontSize: '0.75rem' }}>Failed to load preview.</div>
+                ) : (
+                  <pre style={{
+                    fontFamily: "'Courier New', Courier, monospace",
+                    fontSize: '0.72rem',
+                    color: '#94a3b8',
+                    margin: 0,
+                    whiteSpace: 'pre',
+                    lineHeight: 1.6,
+                  }}>
+                    {preview.content}
+                  </pre>
+                )}
+              </div>
             </div>
           </div>
         </div>
