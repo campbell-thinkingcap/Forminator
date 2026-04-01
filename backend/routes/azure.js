@@ -61,4 +61,35 @@ router.get('/schemas/*', async (req, res) => {
   }
 });
 
+// Save an edited schema to Azure — archives the current version first
+router.put('/schemas/*', express.json(), async (req, res) => {
+  const blobDir = req.params[0];
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ error: 'Request body must be a JSON schema object' });
+  }
+
+  const container = getContainerClient();
+  const currentPath = `${blobDir}/schema.json`;
+
+  // 1. Archive the current schema before overwriting
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const archivePath = `${blobDir}/archive/schema-${timestamp}.json`;
+  const currentBlob = container.getBlobClient(currentPath);
+  const archiveBlob = container.getBlockBlobClient(archivePath);
+  const buffer = await currentBlob.downloadToBuffer();
+  await archiveBlob.upload(buffer, buffer.length, {
+    blobHTTPHeaders: { blobContentType: 'application/json' }
+  });
+
+  // 2. Overwrite schema.json with the new content
+  const newContent = Buffer.from(JSON.stringify(req.body, null, 2), 'utf8');
+  const schemaBlob = container.getBlockBlobClient(currentPath);
+  await schemaBlob.upload(newContent, newContent.length, {
+    overwrite: true,
+    blobHTTPHeaders: { blobContentType: 'application/json' }
+  });
+
+  res.json({ archived: archivePath, saved: currentPath });
+});
+
 module.exports = router;

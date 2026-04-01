@@ -792,6 +792,43 @@ button.secondary:hover {
   transform: none;
 }
 
+.save-to-azure-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+.save-to-azure-label {
+  font-size: 0.78rem;
+  color: #818cf8;
+}
+
+.save-to-azure-btn {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.4rem;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: #818cf8;
+  cursor: pointer;
+}
+
+.save-to-azure-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.35);
+  transform: none;
+}
+
+.save-to-azure-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .chat-schema-proposed {
   display: flex;
   align-items: center;

@@ -60,6 +60,7 @@ function App() {
   const [schemaEditVersion, setSchemaEditVersion] = useState(0);
   const [pendingSchema, setPendingSchema] = useState(null);
   const [editPanelKey, setEditPanelKey] = useState(0);
+  const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const workspaceRef = useRef(null);
   const originalSchemaRef = useRef(null);
 
@@ -120,6 +121,7 @@ function App() {
       setSchema(res.data);
       setFormData(getConstDefaults(res.data));
       setFormTab('form');
+      setSaveStatus(null);
       setError(null);
     } catch (err) {
       setError('Failed to load schema.');
@@ -163,6 +165,19 @@ function App() {
       setFormData(getConstDefaults(originalSchemaRef.current));
       setSchemaEditVersion(v => v + 1);
       setEditPanelKey(k => k + 1);
+      setSaveStatus(null);
+    }
+  };
+
+  const handleSaveToAzure = async () => {
+    setSaveStatus('saving');
+    try {
+      await axios.put(`${API_BASE}/azure/schemas/${selectedBlobDir}`, schema);
+      originalSchemaRef.current = schema;
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch {
+      setSaveStatus('error');
     }
   };
 
@@ -226,6 +241,7 @@ function App() {
               setSelectedSchemaName(azureSchema.blobDir);
               setFormData(getConstDefaults(res.data));
               setFormTab('form');
+              setSaveStatus(null);
               setError(null);
             } catch {
               setError('Failed to load Azure schema.');
@@ -332,6 +348,21 @@ function App() {
                       Discard
                     </button>
                   </div>
+                </div>
+              )}
+              {selectedBlobDir && schema !== originalSchemaRef.current && !pendingSchema && (
+                <div className="save-to-azure-bar">
+                  <span className="save-to-azure-label">Unsaved edits</span>
+                  <button
+                    className="save-to-azure-btn"
+                    onClick={handleSaveToAzure}
+                    disabled={saveStatus === 'saving'}
+                  >
+                    {saveStatus === 'saving' ? 'Saving…'
+                      : saveStatus === 'saved' ? '✓ Saved'
+                      : saveStatus === 'error' ? 'Error — retry'
+                      : 'Save to Azure'}
+                  </button>
                 </div>
               )}
               <div className="form-tab-bar">
