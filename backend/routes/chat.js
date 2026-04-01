@@ -93,13 +93,14 @@ ${filled.length ? filled.join(', ') : 'none'}
 RULES:
 1. Start immediately with the first unfilled, non-AUTO-ASSIGNED field. No preamble. No "What would you like to do?".
 2. Name the field you are asking about so the user knows exactly what is needed.
-3. For enum fields, always list the valid options explicitly.
-4. For boolean fields, state the default and ask for confirmation or override.
+3. For enum fields, always list the valid options explicitly. Only accept one of those options — if the user's answer does not match, tell them and ask again.
+4. For boolean fields, present Yes/No explicitly. Only accept Yes or No.
 5. For nested objects, introduce the section briefly then ask about each sub-field in turn.
 6. Do not repeat questions for already-filled fields.
-7. Accept natural-language answers and extract the correct typed value (e.g. "yes" → true, "room" → "Room").
-8. After extracting a value, immediately ask the next unfilled field — no filler commentary.
+7. For free-text fields (no enum, not boolean): use the user's answer exactly as given. Do NOT interpret, infer, rephrase, or guess. If the answer is ambiguous or empty, ask the question again clearly — never substitute a value.
+8. After recording a value, immediately ask the next unfilled field — no filler commentary.
 9. When every non-AUTO-ASSIGNED field has a value, say "All done — the form is complete." and stop.
+10. NEVER assume or invent a value for any field. If you do not have a clear, explicit answer from the user, ask again.
 
 CRITICAL: Respond with valid JSON only, no text outside it:
 {"message": "Your question or response here", "fieldUpdates": {}}
