@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronRight, ChevronLeft, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ChevronRight, ChevronLeft, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, X, Clock, History } from 'lucide-react';
 
-const AZURE_API = `${import.meta.env.VITE_API_BASE ?? '/api'}/azure/schemas`;
+const AZURE_API = `${import.meta.env.VITE_API_BASE ?? '/api'}/azure`;
 
 // Build a recursive tree from the flat schemas list using blobDir as path
 function buildTree(schemas) {
@@ -34,7 +34,7 @@ function buildTree(schemas) {
   return root;
 }
 
-function TreeNode({ node, depth = 0, selectedBlobDir, onSelect }) {
+function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, onViewHistory }) {
   const isLeaf = node.schema !== null && node.children.length === 0;
   const isFolder = node.children.length > 0;
   const [open, setOpen] = useState(depth === 0);
@@ -46,6 +46,10 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect }) {
     return (
       <div
         onClick={() => onSelect(node.schema)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          onViewHistory(node.schema, e.clientX, e.clientY);
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -113,6 +117,7 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect }) {
               depth={depth + 1}
               selectedBlobDir={selectedBlobDir}
               onSelect={onSelect}
+              onViewHistory={onViewHistory}
             />
           ))}
         </div>
@@ -128,10 +133,14 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
   const [filter, setFilter] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
+  const [contextMenu, setContextMenu] = useState(null); // { schema, x, y }
+  const [historyModal, setHistoryModal] = useState(null); // { schema, archives } | 'loading'
+  const contextMenuRef = useRef(null);
+
   const load = useCallback(async () => {
     setStatus('loading');
     try {
-      const res = await fetch(AZURE_API);
+      const res = await fetch(`${AZURE_API}/schemas`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setTree(buildTree(data.schemas || []));
@@ -144,71 +153,250 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handler = (e) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target)) {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [contextMenu]);
+
+  // Close context menu on Escape
+  useEffect(() => {
+    if (!contextMenu && !historyModal) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+        setHistoryModal(null);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [contextMenu, historyModal]);
+
+  const handleViewHistory = useCallback(async (schema, x, y) => {
+    setContextMenu({ schema, x, y });
+  }, []);
+
+  const openHistory = useCallback(async (schema) => {
+    setContextMenu(null);
+    setHistoryModal('loading');
+    try {
+      const res = await fetch(`${AZURE_API}/history/${schema.blobDir}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setHistoryModal({ schema, archives: data.archives });
+    } catch {
+      setHistoryModal({ schema, archives: null });
+    }
+  }, []);
+
   const filteredTree = filter.trim() ? flatFilter(tree, filter.toLowerCase()) : tree;
 
-  if (status === 'loading') return (
-    <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1rem' }}>
-        <RefreshCw size={13} className="spin" /> Loading schemas...
-      </div>
-    </PanelShell>
-  );
-
-  if (status === 'error') return (
-    <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
-      <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.72rem' }}>
-        Failed to reach Azure schemas.
-        <button onClick={load} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
-          Retry
-        </button>
-      </div>
-    </PanelShell>
-  );
-
   return (
-    <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
-      <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
-        <input
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          placeholder={`Search ${total} schemas...`}
-          style={{ fontSize: '0.72rem', padding: '0.3rem 1.4rem 0.3rem 0.6rem', borderRadius: '0.4rem', width: '100%' }}
-        />
-        {filter && (
+    <>
+      <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
+        {status === 'loading' ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1rem' }}>
+            <RefreshCw size={13} className="spin" /> Loading schemas...
+          </div>
+        ) : status === 'error' ? (
+          <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.72rem' }}>
+            Failed to reach Azure schemas.
+            <button onClick={load} style={{ marginTop: '0.5rem', fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'block' }}>
+              Retry
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
+              <input
+                value={filter}
+                onChange={e => setFilter(e.target.value)}
+                placeholder={`Search ${total} schemas...`}
+                style={{ fontSize: '0.72rem', padding: '0.3rem 1.4rem 0.3rem 0.6rem', borderRadius: '0.4rem', width: '100%' }}
+              />
+              {filter && (
+                <button
+                  onClick={() => setFilter('')}
+                  title="Clear search"
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderRadius: '50%',
+                  }}
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0.4rem 0.5rem' }}>
+              {filteredTree.map(node => (
+                <TreeNode
+                  key={node.key}
+                  node={node}
+                  depth={0}
+                  selectedBlobDir={selectedBlobDir}
+                  onSelect={onSelect}
+                  onViewHistory={handleViewHistory}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </PanelShell>
+
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 1000,
+            background: '#13131a',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '0.5rem',
+            padding: '0.3rem',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            minWidth: '150px',
+          }}
+        >
           <button
-            onClick={() => setFilter('')}
-            title="Clear search"
+            onClick={() => openHistory(contextMenu.schema)}
             style={{
-              position: 'absolute',
-              right: '0.75rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              color: '#64748b',
               display: 'flex',
               alignItems: 'center',
-              borderRadius: '50%',
+              gap: '0.5rem',
+              width: '100%',
+              padding: '0.4rem 0.6rem',
+              background: 'none',
+              border: 'none',
+              borderRadius: '0.35rem',
+              color: '#94a3b8',
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <History size={13} />
+            View history
+          </button>
+        </div>
+      )}
+
+      {/* History modal */}
+      {historyModal && (
+        <div
+          onClick={() => setHistoryModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#13131a',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: '0.75rem',
+              width: '480px',
+              maxHeight: '70vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
             }}
           >
-            <X size={11} />
-          </button>
-        )}
-      </div>
-      <div style={{ overflowY: 'auto', flex: 1, padding: '0.4rem 0.5rem' }}>
-        {filteredTree.map(node => (
-          <TreeNode
-            key={node.key}
-            node={node}
-            depth={0}
-            selectedBlobDir={selectedBlobDir}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
-    </PanelShell>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.85rem 1rem',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Clock size={14} color="#818cf8" />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e2e8f0' }}>
+                  {historyModal === 'loading' ? 'Loading…' : historyModal.schema.blobDir}
+                </span>
+              </div>
+              <button
+                onClick={() => setHistoryModal(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', padding: '0.15rem', borderRadius: '0.3rem' }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0.5rem 0' }}>
+              {historyModal === 'loading' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.78rem', padding: '1.5rem 1rem' }}>
+                  <RefreshCw size={13} className="spin" /> Loading history…
+                </div>
+              ) : historyModal.archives === null ? (
+                <div style={{ color: '#ef4444', fontSize: '0.78rem', padding: '1.5rem 1rem' }}>
+                  Failed to load history.
+                </div>
+              ) : historyModal.archives.length === 0 ? (
+                <div style={{ color: '#475569', fontSize: '0.78rem', padding: '1.5rem 1rem' }}>
+                  No history yet — archived versions will appear here after saving edits.
+                </div>
+              ) : (
+                historyModal.archives.map((archive, i) => (
+                  <div
+                    key={archive.path}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.6rem 1rem',
+                      borderBottom: i < historyModal.archives.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    }}
+                  >
+                    <FileJson size={13} color="#475569" style={{ flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>
+                        {new Date(archive.lastModified).toLocaleString(undefined, {
+                          year: 'numeric', month: 'long', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: '#334155', marginTop: '0.15rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {archive.name}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

@@ -61,6 +61,27 @@ router.get('/schemas/*', async (req, res) => {
   }
 });
 
+// List archived versions for a schema
+router.get('/history/*', async (req, res) => {
+  const blobDir = req.params[0];
+  const container = getContainerClient();
+  const prefix = `${blobDir}/archive/`;
+  const archives = [];
+
+  for await (const blob of container.listBlobsFlat({ prefix })) {
+    if (blob.name.endsWith('.json')) {
+      archives.push({
+        path: blob.name,
+        name: blob.name.split('/').pop(),
+        lastModified: blob.properties.lastModified,
+      });
+    }
+  }
+
+  archives.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+  res.json({ archives, blobDir });
+});
+
 // Save an edited schema to Azure — archives the current version first
 router.put('/schemas/*', express.json(), async (req, res) => {
   const blobDir = req.params[0];
