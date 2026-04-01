@@ -18,6 +18,7 @@ RUN cd backend && npm ci --omit=dev
 
 COPY backend/ ./backend/
 COPY schemas/ ./schemas/
+COPY schema_ai_concept.md ./
 COPY --from=builder /app/frontend/dist ./frontend/dist
 COPY --from=builder /app/frontend/storybook-static ./frontend/storybook-static
 
