@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronRight, ChevronLeft, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, X, Clock, History } from 'lucide-react';
+import JsonHighlight from './JsonHighlight';
 
 const AZURE_API = `${import.meta.env.VITE_API_BASE ?? '/api'}/azure`;
 
@@ -207,9 +208,8 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
       const res = await fetch(`${AZURE_API}/blob?path=${encodeURIComponent(archive.path)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
-      // Pretty-print if valid JSON
-      try { setPreview({ content: JSON.stringify(JSON.parse(text), null, 2) }); }
-      catch { setPreview({ content: text }); }
+      try { setPreview({ content: JSON.parse(text) }); }
+      catch { setPreview({ content: text, raw: true }); }
     } catch {
       setPreview('error');
     }
@@ -471,17 +471,12 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
                   </div>
                 ) : preview === 'error' ? (
                   <div style={{ color: '#ef4444', fontSize: '0.75rem' }}>Failed to load preview.</div>
-                ) : (
-                  <pre style={{
-                    fontFamily: "'Courier New', Courier, monospace",
-                    fontSize: '0.72rem',
-                    color: '#94a3b8',
-                    margin: 0,
-                    whiteSpace: 'pre',
-                    lineHeight: 1.6,
-                  }}>
+                ) : preview.raw ? (
+                  <pre style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '0.72rem', color: '#94a3b8', margin: 0, whiteSpace: 'pre', lineHeight: 1.6 }}>
                     {preview.content}
                   </pre>
+                ) : (
+                  <JsonHighlight value={preview.content} />
                 )}
               </div>
             </div>
