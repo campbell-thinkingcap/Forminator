@@ -1,11 +1,10 @@
 # Forminator
 
-A dynamic form generator that renders interactive forms from JSON Schema definitions. Point it at a schema, fill in the form, and get clean JSON output. Includes an AI chat assistant for guided form filling and an AI edit assistant for iterating on schemas in memory.
+A dynamic form generator that renders interactive forms from JSON Schema definitions. Point it at a schema stored in Azure Blob Storage, fill in the form, and get clean JSON output. Includes an AI chat assistant for guided form filling and an AI edit assistant for iterating on schemas.
 
 ## Features
 
-- **Schema-driven forms** — drop a JSON Schema file into `schemas/` and it appears automatically
-- **Azure Blob Storage** — browse and load schemas stored in Azure via the schema tree sidebar
+- **Azure Blob Storage** — browse and load schemas from Azure via the schema tree sidebar
 - **Live JSON output** — switch between Form and JSON tabs; output updates in real time
 - **Split-pane layout** — resizable divider between the left panel and the form
 - **Active field highlighting** — focusing a field scrolls the schema panel to that definition
@@ -31,11 +30,13 @@ A dynamic form generator that renders interactive forms from JSON Schema definit
 ### Edit assistant
 
 - Accepts natural-language instructions: *"add a required priority field with options low, medium, high"*
-- Returns and applies the complete modified schema in memory — no file writes
-- An amber **reset bar** appears when edits are active; clicking Reset restores the original schema
-- A green **✓ Schema updated** indicator appears on each successful change
-- The Schema tab, form, and Chat assistant all reflect edits immediately
-- The Chat assistant reinitializes with the updated schema after each edit
+- Asks targeted clarifying questions before applying changes when needed
+- Returns a **proposed** schema — an amber bar lets you test it in the form and chat before committing
+- Click **Approve** to accept the proposal, **Discard** to revert
+- After approving, a blue **Save to Azure** bar appears — click it to persist the schema back to Azure Blob Storage
+- Before saving, the previous `schema.json` is automatically archived to `{blobDir}/archive/schema-{timestamp}.json`
+- The Schema tab switches to a **diff view** (green added lines, red removed lines) while a proposal is active, and scrolls to the first change automatically
+- Type `/hint` to get a quality review of the current schema
 
 ### Supported field types
 
@@ -59,7 +60,7 @@ Forminator/
 │   └── routes/
 │       ├── chat.js       # Guided form-filling assistant (/api/chat)
 │       ├── chatEdit.js   # Schema edit assistant (/api/chat/edit)
-│       ├── azure.js      # Azure Blob Storage schema loader
+│       ├── azure.js      # Azure Blob Storage schema loader and saver
 │       └── data.js       # Form submission CRUD API
 ├── frontend/
 │   └── src/
@@ -67,13 +68,13 @@ Forminator/
 │       └── components/
 │           ├── DynamicForm.jsx    # Recursive form renderer
 │           ├── FormField.jsx      # Individual field inputs
-│           ├── JsonHighlight.jsx  # Syntax-highlighted schema viewer
+│           ├── JsonHighlight.jsx  # Syntax-highlighted schema viewer with diff mode
 │           ├── ChatPanel.jsx      # Guided form-filling chat UI
 │           ├── EditPanel.jsx      # Schema edit chat UI
 │           ├── SchemaTree.jsx     # Azure schema browser sidebar
 │           ├── ApiDocs.jsx        # Auto-generated API docs view
 │           └── LoginPage.jsx      # Google OAuth login
-└── schemas/              # Local JSON Schema files
+└── schema_ai_concept.md  # Schema design guide loaded by the edit assistant
 ```
 
 ## Getting Started
@@ -106,31 +107,28 @@ Create `backend/.env`:
 
 ```
 ANTHROPIC_API_KEY=sk-...
-AZURE_STORAGE_CONNECTION_STRING=...   # optional — for Azure schema browser
+AZURE_ACCOUNT_NAME=tcsettings
+AZURE_ACCOUNT_KEY=...
 ```
 
-## Adding a Schema
+`AZURE_ACCOUNT_NAME` and `AZURE_ACCOUNT_KEY` are required — schemas are loaded exclusively from Azure Blob Storage. The schemas container is expected to contain paths of the form `{category}/{name}/schema.json`.
 
-Drop any valid JSON Schema file into the `schemas/` directory:
+## Schema edit workflow
 
-```
-schemas/my-schema.json
-```
+1. Load a schema from the Azure sidebar
+2. Switch to the **Edit** tab and describe a change in plain English
+3. The assistant may ask clarifying questions, then proposes the full modified schema
+4. The Schema tab switches to diff view — the first change scrolls into view automatically
+5. Use the form and Chat tab to test the proposed schema
+6. Click **Approve** to accept, or **Discard** to revert
+7. Click **Save to Azure** to write the schema back to Azure Blob Storage
 
-It appears in the UI immediately (no restart needed).
-
-### Schema tips
-
-- Top-level `type: "object"` with a `properties` map is required
-- `title` and `description` are displayed in the form header
-- `required` arrays control field ordering and required indicators in the chat assistant
-- Fields with `"const": <value>` are pre-filled and locked — the chat assistant skips them
-- Fields with `"format": "uuid"` are displayed as auto-assigned and skipped in chat
+The previous version is always archived before saving.
 
 ## Tech Stack
 
 - **Frontend:** React 19, Vite, Lucide icons, Storybook, Vitest + Playwright
-- **Backend:** Node.js, Express, Anthropic SDK (`claude-haiku-4-5`)
+- **Backend:** Node.js, Express, Anthropic SDK (`claude-sonnet-4-6`)
 - **Auth:** Google OAuth (`@react-oauth/google`)
 - **Storage:** Azure Blob Storage (`@azure/storage-blob`)
 - **Styling:** Custom CSS, glassmorphism dark theme, Outfit font
