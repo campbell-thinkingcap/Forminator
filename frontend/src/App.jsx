@@ -7,7 +7,7 @@ import SchemaTree from './components/SchemaTree';
 import LoginPage from './components/LoginPage';
 import ChatPanel from './components/ChatPanel';
 import EditPanel from './components/EditPanel';
-import { Code, FileJson, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw } from 'lucide-react';
+import { Code, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw } from 'lucide-react';
 
 function getConstDefaults(schema) {
   if (!schema?.properties) return {};
@@ -45,7 +45,6 @@ function App() {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('forminator_user')) ?? null; } catch { return null; }
   });
-  const [schemas, setSchemas] = useState([]);
   const [selectedSchemaName, setSelectedSchemaName] = useState('');
   const [schema, setSchema] = useState(null);
   const [formData, setFormData] = useState({});
@@ -89,46 +88,9 @@ function App() {
     document.addEventListener('mouseup', onMouseUp);
   }, []);
 
-  useEffect(() => {
-    if (user) fetchSchemas();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
   if (!user) {
     return <LoginPage onLogin={login} />;
   }
-
-  const fetchSchemas = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/schemas`);
-      setSchemas(res.data);
-      if (res.data.length > 0) {
-        handleSchemaSelect(res.data[0].name);
-      }
-    } catch (err) {
-      setError('Failed to connect to backend server.');
-    }
-  };
-
-  const handleSchemaSelect = async (name) => {
-    setLoading(true);
-    setSelectedSchemaName(name);
-    setLeftPanel('schema');
-    try {
-      const res = await axios.get(`${API_BASE}/schemas/${name}`);
-      originalSchemaRef.current = res.data;
-      setPendingSchema(null);
-      setSchema(res.data);
-      setFormData(getConstDefaults(res.data));
-      setFormTab('form');
-      setSaveStatus(null);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load schema.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFieldUpdates = (updates) => {
     setFormData(prev => deepMerge(prev, updates));
@@ -253,20 +215,10 @@ function App() {
 
         {view === 'docs' && (
           <div style={{ flex: 1, minWidth: 0, padding: '0 0.5rem' }}>
-            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <FileJson size={16} color="#818cf8" />
-              <select
-                value={selectedSchemaName}
-                onChange={(e) => handleSchemaSelect(e.target.value)}
-                style={{ width: 'auto', minWidth: '180px', padding: '0.4rem 0.75rem', fontSize: '0.85rem', borderRadius: '0.5rem' }}
-              >
-                <option value="" disabled>Select a schema...</option>
-                {schemas.map(s => (
-                  <option key={s.name} value={s.name}>{s.name}.json</option>
-                ))}
-              </select>
-            </div>
-            <ApiDocs schema={schema} schemaName={selectedSchemaName} apiBase={API_BASE} />
+            {schema
+              ? <ApiDocs schema={schema} schemaName={selectedSchemaName} apiBase={API_BASE} />
+              : <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '3rem' }}>Select a schema from the panel on the left to view its API docs</div>
+            }
           </div>
         )}
 
@@ -408,7 +360,7 @@ function App() {
               )}
             </div>
           ) : (
-            !error && <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '3rem' }}>Select a schema to begin</div>
+            !error && <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '3rem' }}>Select a schema from the panel on the left to begin</div>
           )}
         </main>
         </div>
