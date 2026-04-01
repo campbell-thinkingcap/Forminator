@@ -23,8 +23,10 @@ A dynamic form generator that renders interactive forms from JSON Schema definit
 
 - Asks for one field at a time in required-first order
 - Skips `const` and UUID fields (auto-assigned, never prompted)
-- Presents **radio buttons** for `enum` and `boolean` fields — no free-text guessing
+- Presents **radio buttons** for `enum` and `boolean` fields — only the listed options are accepted
 - Presents **checkboxes** for array fields with `items.enum`
+- Never guesses or infers a value — if the user's answer is unclear, it asks again
+- Respects `x-hint` on any field — hint text is woven naturally into the question
 - Refocuses the input after each response
 
 ### Edit assistant
@@ -36,7 +38,8 @@ A dynamic form generator that renders interactive forms from JSON Schema definit
 - After approving, a blue **Save to Azure** bar appears — click it to persist the schema back to Azure Blob Storage
 - Before saving, the previous `schema.json` is automatically archived to `{blobDir}/archive/schema-{timestamp}.json`
 - The Schema tab switches to a **diff view** (green added lines, red removed lines) while a proposal is active, and scrolls to the first change automatically
-- Type `/hint` to get a quality review of the current schema
+- Type `/hint` to get a quality review of the current schema — response is rendered as markdown
+- **Archive history** — right-click any schema in the sidebar to view past versions, preview them with syntax highlighting, and roll back to any prior version
 
 ### Supported field types
 
@@ -101,6 +104,15 @@ npm run dev
 
 Opens at `http://localhost:5173`.
 
+### 3. Start Storybook
+
+```bash
+cd frontend
+npm run storybook
+```
+
+Opens at `http://localhost:6006`. Stories cover `JsonHighlight` (including diff mode), `ChatPanel` (enum/boolean/checkbox states), `EditPanel` (schema-proposed badge, `/hint` markdown), `DynamicForm`, and `FormField`.
+
 ### Environment variables
 
 Create `backend/.env`:
@@ -127,7 +139,7 @@ The previous version is always archived before saving.
 
 ## Tech Stack
 
-- **Frontend:** React 19, Vite, Lucide icons, Storybook, Vitest + Playwright
+- **Frontend:** React 19, Vite, Lucide icons, `react-markdown`, Storybook, Vitest + Playwright
 - **Backend:** Node.js, Express, Anthropic SDK (`claude-sonnet-4-6`)
 - **Auth:** Google OAuth (`@react-oauth/google`)
 - **Storage:** Azure Blob Storage (`@azure/storage-blob`)
