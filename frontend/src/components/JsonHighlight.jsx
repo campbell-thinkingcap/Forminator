@@ -75,12 +75,19 @@ function diffLines(oldLines, newLines) {
 
 const JsonHighlight = ({ value, activeKey, diffBase }) => {
   const activeLineRef = useRef(null);
+  const firstChangeRef = useRef(null);
 
   useEffect(() => {
     if (activeLineRef.current) {
       activeLineRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [activeKey]);
+
+  useEffect(() => {
+    if (diffBase && firstChangeRef.current) {
+      firstChangeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [diffBase]);
 
   if (diffBase) {
     const oldLines = JSON.stringify(diffBase, null, 2).split('\n');
@@ -89,6 +96,7 @@ const JsonHighlight = ({ value, activeKey, diffBase }) => {
     const highlightedOld = highlight(oldLines.join('\n')).split('\n');
     const highlightedNew = highlight(newLines.join('\n')).split('\n');
     let oldIdx = 0, newIdx = 0;
+    let firstChangeFound = false;
 
     return (
       <pre className="json-highlight">
@@ -105,8 +113,10 @@ const JsonHighlight = ({ value, activeKey, diffBase }) => {
             htmlLine = highlightedOld[oldIdx++];
             cls = 'jh-line jh-diff-remove';
           }
+          const isFirstChange = !firstChangeFound && hunk.type !== 'equal';
+          if (isFirstChange) firstChangeFound = true;
           return (
-            <div key={i} className={cls}>
+            <div key={i} className={cls} ref={isFirstChange ? firstChangeRef : null}>
               <span className="jh-diff-marker">
                 {hunk.type === 'add' ? '+' : hunk.type === 'remove' ? '−' : ' '}
               </span>
