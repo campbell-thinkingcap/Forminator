@@ -747,6 +747,15 @@ button.secondary:hover {
   color: #10b981;
 }
 
+.chat-hint-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: #f59e0b;
+}
+
 /* Animations */
 @keyframes spin {
   from { transform: rotate(0deg); }

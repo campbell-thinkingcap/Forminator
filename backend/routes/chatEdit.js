@@ -12,6 +12,39 @@ const SCHEMA_GUIDE = fs.readFileSync(
   'utf8'
 );
 
+function buildHintSystemPrompt(schema) {
+  return `You are a JSON Schema quality reviewer. Examine the schema below and identify concrete improvements based on the guide.
+
+You have deep knowledge of the following schema design guide:
+
+---
+${SCHEMA_GUIDE}
+---
+
+CURRENT SCHEMA:
+${JSON.stringify(schema, null, 2)}
+
+Focus your review on:
+- Fields missing \`description\` (the most impactful property for AI prompting)
+- Fields missing \`x-prompt\` (removes ambiguity for the chat assistant)
+- Fields missing \`x-order\` (controls conversational flow)
+- Fields missing \`examples\` or \`default\` values where they would help
+- Fields that have a small fixed set of values but don't use \`enum\`
+- Fields that are clearly conditional but don't use \`if/then/else\` or \`x-depends-on\`
+- Required fields missing from the \`required\` array
+- Fields with \`format: uuid\` or \`const\` that should be marked \`readOnly\`
+- Any \`x-hint\` opportunities (extra guidance alongside a question)
+
+Return a numbered list of specific, actionable suggestions. For each, name the field and say exactly what to add or change. Keep suggestions concise — one to two sentences each.
+
+If the schema is already well-formed and follows the guide closely, say so briefly.
+
+RESPONSE FORMAT (strict):
+{"message": "1. ...\n2. ...", "schema": null}
+
+No text outside the JSON object. No markdown fences.`;
+}
+
 function buildEditSystemPrompt(schema) {
   return `You are a JSON Schema editing assistant that helps developers design schemas optimised for AI-assisted user prompting.
 
@@ -48,23 +81,28 @@ No text outside the JSON object. No markdown fences.`;
 }
 
 router.post('/', async (req, res) => {
-  const { schema, messages = [] } = req.body;
+  const { schema, messages = [], mode } = req.body;
 
   if (!schema) {
     return res.status(400).json({ error: 'Schema is required' });
   }
 
-  // Strip any UI-only metadata — Anthropic only accepts role + content
-  const apiMessages = [
-    { role: 'user', content: 'Start' },
-    ...messages.map(({ role, content }) => ({ role, content }))
-  ];
+  const isHint = mode === 'hint';
+  const systemPrompt = isHint ? buildHintSystemPrompt(schema) : buildEditSystemPrompt(schema);
+
+  // Hint mode is always a fresh one-shot analysis — no conversation history needed
+  const apiMessages = isHint
+    ? [{ role: 'user', content: 'Analyse this schema and give me improvement hints.' }]
+    : [
+        { role: 'user', content: 'Start' },
+        ...messages.map(({ role, content }) => ({ role, content }))
+      ];
 
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
-      system: buildEditSystemPrompt(schema),
+      system: systemPrompt,
       messages: apiMessages
     });
 

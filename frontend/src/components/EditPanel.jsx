@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Wand2, Send, User, CheckCircle } from 'lucide-react';
+import { Wand2, Send, User, CheckCircle, Lightbulb } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
@@ -34,6 +34,8 @@ export default function EditPanel({ schema, onSchemaEdit }) {
   const sendMessage = async (text) => {
     if (!text.trim() || loading) return;
 
+    const isHint = text.trim().toLowerCase() === '/hint';
+
     const userMsg = { role: 'user', content: text.trim() };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
@@ -41,13 +43,19 @@ export default function EditPanel({ schema, onSchemaEdit }) {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE}/chat/edit`, {
-        schema,
-        messages: updatedMessages
-      });
+      const payload = isHint
+        ? { schema, mode: 'hint' }
+        : { schema, messages: updatedMessages };
+
+      const res = await axios.post(`${API_BASE}/chat/edit`, payload);
 
       const { message, schema: newSchema } = res.data;
-      const assistantMsg = { role: 'assistant', content: message, schemaApplied: !!newSchema };
+      const assistantMsg = {
+        role: 'assistant',
+        content: message,
+        schemaApplied: !!newSchema,
+        hintResponse: isHint
+      };
       setMessages(prev => [...prev, assistantMsg]);
 
       if (newSchema) {
@@ -88,6 +96,11 @@ export default function EditPanel({ schema, onSchemaEdit }) {
                   <CheckCircle size={11} /> Schema updated
                 </div>
               )}
+              {msg.hintResponse && (
+                <div className="chat-hint-badge">
+                  <Lightbulb size={11} /> Hint
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -108,7 +121,7 @@ export default function EditPanel({ schema, onSchemaEdit }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe a schema change…"
+          placeholder="Describe a schema change… or type /hint"
           disabled={loading || !schema}
           className="chat-input"
         />
