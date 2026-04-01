@@ -738,6 +738,66 @@ button.secondary:hover {
   transform: none;
 }
 
+/* Pending schema bar (form column) */
+.pending-schema-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+.pending-schema-label {
+  font-size: 0.78rem;
+  color: #f59e0b;
+}
+
+.pending-schema-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pending-schema-approve-btn {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.4rem;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #f59e0b;
+  cursor: pointer;
+}
+
+.pending-schema-approve-btn:hover {
+  background: rgba(245, 158, 11, 0.35);
+  transform: none;
+}
+
+.pending-schema-discard-btn {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.4rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.pending-schema-discard-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: none;
+}
+
+.chat-schema-proposed {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: #f59e0b;
+}
+
 .chat-schema-applied {
   display: flex;
   align-items: center;

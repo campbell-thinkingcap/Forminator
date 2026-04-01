@@ -58,6 +58,8 @@ function App() {
   const [formTab, setFormTab] = useState('form');
   const [selectedBlobDir, setSelectedBlobDir] = useState(null);
   const [schemaEditVersion, setSchemaEditVersion] = useState(0);
+  const [pendingSchema, setPendingSchema] = useState(null);
+  const [editPanelKey, setEditPanelKey] = useState(0);
   const workspaceRef = useRef(null);
   const originalSchemaRef = useRef(null);
 
@@ -114,6 +116,7 @@ function App() {
     try {
       const res = await axios.get(`${API_BASE}/schemas/${name}`);
       originalSchemaRef.current = res.data;
+      setPendingSchema(null);
       setSchema(res.data);
       setFormData(getConstDefaults(res.data));
       setFormTab('form');
@@ -134,18 +137,35 @@ function App() {
   };
 
   const handleSchemaEdit = (newSchema) => {
-    setSchema(newSchema);
+    setPendingSchema(newSchema);
     setFormData(getConstDefaults(newSchema));
-    setSchemaEditVersion(v => v + 1);
+    setSchemaEditVersion(v => v + 1);  // ChatPanel remounts to test proposed schema
+  };
+
+  const handlePendingApprove = () => {
+    setSchema(pendingSchema);
+    setPendingSchema(null);
+    // No schemaEditVersion bump — ChatPanel already has the right schema
+  };
+
+  const handlePendingDiscard = () => {
+    setPendingSchema(null);
+    setFormData(getConstDefaults(schema));
+    setSchemaEditVersion(v => v + 1);  // ChatPanel remounts back to accepted schema
+    setEditPanelKey(k => k + 1);       // EditPanel conversation clears
   };
 
   const handleSchemaReset = () => {
     if (originalSchemaRef.current) {
+      setPendingSchema(null);
       setSchema(originalSchemaRef.current);
       setFormData(getConstDefaults(originalSchemaRef.current));
       setSchemaEditVersion(v => v + 1);
+      setEditPanelKey(k => k + 1);
     }
   };
+
+  const activeSchema = pendingSchema ?? schema;
 
   return (
     <div className="app-shell">
@@ -200,6 +220,7 @@ function App() {
             try {
               const res = await axios.get(`${API_BASE}/azure/schemas/${azureSchema.blobDir}`);
               originalSchemaRef.current = res.data;
+              setPendingSchema(null);
               setSchema(res.data);
               setSelectedSchemaName(azureSchema.blobDir);
               setFormData(getConstDefaults(res.data));
@@ -258,20 +279,20 @@ function App() {
           </div>
           <div className={`schema-panel-body${leftPanel !== 'schema' ? ' schema-panel-body--no-scroll' : ''}`}>
             {leftPanel === 'schema' && (
-              schema
-                ? <JsonHighlight value={schema} activeKey={activeField} />
+              activeSchema
+                ? <JsonHighlight value={activeSchema} activeKey={activeField} />
                 : <span className="schema-panel-empty">No schema loaded</span>
             )}
             {leftPanel === 'chat' && (
               <ChatPanel
                 key={schemaEditVersion}
-                schema={schema}
+                schema={activeSchema}
                 currentFormData={formData}
                 onFieldUpdates={handleFieldUpdates}
               />
             )}
             <div style={{ display: leftPanel === 'edit' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-              {schema && schema !== originalSchemaRef.current && (
+              {schema && schema !== originalSchemaRef.current && !pendingSchema && (
                 <div className="edit-panel-reset-bar">
                   <span className="edit-panel-reset-label">Schema has unsaved edits</span>
                   <button className="secondary edit-panel-reset-btn" onClick={handleSchemaReset}>
@@ -279,7 +300,7 @@ function App() {
                   </button>
                 </div>
               )}
-              <EditPanel schema={schema} onSchemaEdit={handleSchemaEdit} />
+              <EditPanel key={editPanelKey} schema={activeSchema} onSchemaEdit={handleSchemaEdit} />
             </div>
           </div>
         </aside>
@@ -293,6 +314,21 @@ function App() {
             </div>
           ) : schema ? (
             <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              {pendingSchema && (
+                <div className="pending-schema-bar">
+                  <span className="pending-schema-label">
+                    Proposed schema — test it in the form or chat
+                  </span>
+                  <div className="pending-schema-actions">
+                    <button className="pending-schema-approve-btn" onClick={handlePendingApprove}>
+                      Approve
+                    </button>
+                    <button className="secondary pending-schema-discard-btn" onClick={handlePendingDiscard}>
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="form-tab-bar">
                 <button
                   className={`panel-tab${formTab === 'form' ? ' panel-tab--active' : ''}`}
@@ -318,10 +354,10 @@ function App() {
 
               {formTab === 'form' && (
                 <div className="card fade-in">
-                  <h2 style={{ marginBottom: '0.25rem' }}>{schema.title}</h2>
-                  <p className="description" style={{ marginBottom: '2rem' }}>{schema.description}</p>
+                  <h2 style={{ marginBottom: '0.25rem' }}>{activeSchema.title}</h2>
+                  <p className="description" style={{ marginBottom: '2rem' }}>{activeSchema.description}</p>
                   <DynamicForm
-                    schema={schema}
+                    schema={activeSchema}
                     data={formData}
                     onChange={handleFormChange}
                     onFieldFocus={setActiveField}

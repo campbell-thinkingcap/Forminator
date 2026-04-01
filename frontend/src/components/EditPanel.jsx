@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Wand2, Send, User, CheckCircle, Lightbulb } from 'lucide-react';
+import { Wand2, Send, User, FlaskConical, Lightbulb } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
@@ -92,8 +92,8 @@ export default function EditPanel({ schema, onSchemaEdit }) {
             <div className="chat-bubble-wrap">
               <div className="chat-bubble">{msg.content}</div>
               {msg.schemaApplied && (
-                <div className="chat-schema-applied">
-                  <CheckCircle size={11} /> Schema updated
+                <div className="chat-schema-proposed">
+                  <FlaskConical size={11} /> Schema proposed
                 </div>
               )}
               {msg.hintResponse && (
