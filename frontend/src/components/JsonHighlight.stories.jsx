@@ -58,3 +58,66 @@ export const NestedSchema = {
     activeKey: null,
   },
 };
+
+// ── Diff mode ────────────────────────────────────────────────────────────────
+
+const schemaBeforeEdit = {
+  title: 'User Profile',
+  type: 'object',
+  required: ['name', 'email'],
+  properties: {
+    name:   { type: 'string',  description: 'Display name' },
+    email:  { type: 'string',  description: 'Email address' },
+    active: { type: 'boolean' },
+  },
+};
+
+const schemaAfterAddField = {
+  title: 'User Profile',
+  type: 'object',
+  required: ['name', 'email', 'role'],
+  properties: {
+    name:   { type: 'string',  description: 'Display name' },
+    email:  { type: 'string',  description: 'Email address' },
+    active: { type: 'boolean' },
+    role:   { type: 'string',  enum: ['admin', 'editor', 'viewer'], description: 'System role' },
+  },
+};
+
+const schemaAfterEditDescription = {
+  title: 'User Profile',
+  type: 'object',
+  required: ['name', 'email'],
+  properties: {
+    name:   { type: 'string',  description: 'Full legal name' },
+    email:  { type: 'string',  description: 'Primary email address' },
+    active: { type: 'boolean' },
+  },
+};
+
+export const DiffAddedField = {
+  name: 'Diff — field added',
+  args: {
+    value: schemaAfterAddField,
+    diffBase: schemaBeforeEdit,
+    activeKey: null,
+  },
+};
+
+export const DiffEditedDescription = {
+  name: 'Diff — description changed',
+  args: {
+    value: schemaAfterEditDescription,
+    diffBase: schemaBeforeEdit,
+    activeKey: null,
+  },
+};
+
+export const DiffNoChanges = {
+  name: 'Diff — no changes',
+  args: {
+    value: schemaBeforeEdit,
+    diffBase: schemaBeforeEdit,
+    activeKey: null,
+  },
+};
