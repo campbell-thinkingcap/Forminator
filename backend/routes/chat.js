@@ -62,7 +62,8 @@ function buildSystemPrompt(schema, currentFormData) {
     const isConst = 'const' in prop;
     const enumVals = prop.enum ? `Options: ${prop.enum.join(', ')}` : '';
     const desc = prop.description ? prop.description.split('.')[0] : ''; // first sentence only
-    return `- ${key} [${type}${isRequired ? ', REQUIRED' : ''}${isUuid || isConst ? ', AUTO-ASSIGNED' : ''}] ${enumVals} ${desc}`.trim();
+    const hint = prop['x-hint'] ? `Hint: ${prop['x-hint']}` : '';
+    return `- ${key} [${type}${isRequired ? ', REQUIRED' : ''}${isUuid || isConst ? ', AUTO-ASSIGNED' : ''}] ${enumVals} ${desc} ${hint}`.trim();
   }).join('\n');
 
   // Const fields are always pre-filled — never ask for them.
@@ -101,6 +102,7 @@ RULES:
 8. After recording a value, immediately ask the next unfilled field — no filler commentary.
 9. When every non-AUTO-ASSIGNED field has a value, say "All done — the form is complete." and stop.
 10. NEVER assume or invent a value for any field. If you do not have a clear, explicit answer from the user, ask again.
+11. If a field has a Hint, include it naturally in your question to give the user useful context.
 
 CRITICAL: Respond with valid JSON only, no text outside it:
 {"message": "Your question or response here", "fieldUpdates": {}}
