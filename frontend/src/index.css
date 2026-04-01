@@ -176,6 +176,9 @@ body {
 .jh-number     { color: #f59e0b; }
 .jh-bool       { color: #f472b6; }
 .jh-null       { color: #64748b; }
+.jh-diff-add    { background: rgba(16, 185, 129, 0.12); border-left: 2px solid #10b981; }
+.jh-diff-remove { background: rgba(239, 68, 68, 0.1);  border-left: 2px solid #ef4444; opacity: 0.7; }
+.jh-diff-marker { min-width: 1.2rem; padding-right: 0.5rem; text-align: center; color: #475569; user-select: none; flex-shrink: 0; font-size: 0.8em; }
 
 .schema-panel-empty {
   color: var(--text-muted);

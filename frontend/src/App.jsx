@@ -140,6 +140,7 @@ function App() {
     setPendingSchema(newSchema);
     setFormData(getConstDefaults(newSchema));
     setSchemaEditVersion(v => v + 1);  // ChatPanel remounts to test proposed schema
+    setLeftPanel('schema');            // Show diff immediately
   };
 
   const handlePendingApprove = () => {
@@ -280,7 +281,11 @@ function App() {
           <div className={`schema-panel-body${leftPanel !== 'schema' ? ' schema-panel-body--no-scroll' : ''}`}>
             {leftPanel === 'schema' && (
               activeSchema
-                ? <JsonHighlight value={activeSchema} activeKey={activeField} />
+                ? <JsonHighlight
+                    value={activeSchema}
+                    activeKey={pendingSchema ? null : activeField}
+                    diffBase={pendingSchema ? schema : null}
+                  />
                 : <span className="schema-panel-empty">No schema loaded</span>
             )}
             {leftPanel === 'chat' && (
