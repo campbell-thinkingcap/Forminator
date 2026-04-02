@@ -8,7 +8,7 @@ import LoginPage from './components/LoginPage';
 import ChatPanel from './components/ChatPanel';
 import EditPanel from './components/EditPanel';
 import DbPanel from './components/DbPanel';
-import { Code, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw, Sun, Moon, Database } from 'lucide-react';
+import { Code, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw, Database, Sun, Moon, GraduationCap, ChevronDown } from 'lucide-react';
 
 function getConstDefaults(schema) {
   if (!schema?.properties) return {};
@@ -42,20 +42,39 @@ function deepMerge(target, source) {
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
+const THEMES = [
+  { value: 'dark',        label: 'Dark',        icon: <Moon size={14} /> },
+  { value: 'light',       label: 'Light',       icon: <Sun size={14} /> },
+  { value: 'thinkingcap', label: 'ThinkingCap', icon: <GraduationCap size={14} /> },
+];
+
 function App() {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('forminator_user')) ?? null; } catch { return null; }
   });
-  const [darkMode, setDarkMode] = useState(() => {
+  const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('forminator_theme');
-    if (stored) return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (stored && ['dark', 'light', 'thinkingcap'].includes(stored)) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-    localStorage.setItem('forminator_theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('forminator_theme', theme);
+  }, [theme]);
+
+  const [themeOpen, setThemeOpen] = useState(false);
+  const themeRef = useRef(null);
+
+  useEffect(() => {
+    if (!themeOpen) return;
+    const handler = (e) => {
+      if (themeRef.current && !themeRef.current.contains(e.target)) setThemeOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [themeOpen]);
+
   const [selectedSchemaName, setSelectedSchemaName] = useState('');
   const [schema, setSchema] = useState(null);
   const [formData, setFormData] = useState({});
@@ -164,13 +183,30 @@ function App() {
           <p className="subtitle">Dynamic Form Generator based on JSON Schema</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button
-            className="secondary sign-out-btn"
-            onClick={() => setDarkMode(d => !d)}
-            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {darkMode ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
+          <div className="theme-dropdown" ref={themeRef}>
+            <button
+              className="secondary theme-dropdown-toggle"
+              onClick={() => setThemeOpen(o => !o)}
+              title="Switch theme"
+            >
+              {THEMES.find(t => t.value === theme)?.icon}
+              <ChevronDown size={11} />
+            </button>
+            {themeOpen && (
+              <div className="theme-dropdown-menu">
+                {THEMES.map(t => (
+                  <button
+                    key={t.value}
+                    className={`theme-dropdown-item${theme === t.value ? ' theme-dropdown-item--active' : ''}`}
+                    onClick={() => { setTheme(t.value); setThemeOpen(false); }}
+                  >
+                    {t.icon}
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             className={view === 'form' ? '' : 'secondary'}
             onClick={() => setView('form')}

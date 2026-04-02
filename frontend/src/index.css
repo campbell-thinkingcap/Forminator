@@ -1,42 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-
-:root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --input-bg: rgba(0, 0, 0, 0.2);
-  --accent: #10b981;
-  --panel-bg: #0a0a0f;
-  --json-preview-bg: #000;
-  --select-option-bg: #1e1b4b;
-  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
-}
-
-[data-theme="light"] {
-  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-  --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(0, 0, 0, 0.1);
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --input-bg: rgba(0, 0, 0, 0.04);
-  --select-option-bg: #f1f5f9;
-  --panel-tab-hover-bg: rgba(0, 0, 0, 0.04);
-}
-
-/* Keep code/schema panels dark in light mode */
-[data-theme="light"] .schema-panel {
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --input-bg: rgba(0, 0, 0, 0.2);
-  --select-option-bg: #1e1b4b;
-  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
-}
+@import './themes.css';
 
 * {
   box-sizing: border-box;
@@ -45,7 +7,7 @@
 }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Myriad Pro", 'myriad-pro', -apple-system, BlinkMacSystemFont, "Aptos", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
   background: var(--bg-gradient);
   color: var(--text-main);
   min-height: 100vh;
@@ -247,11 +209,11 @@ h1 {
 
 .card {
   background: var(--glass-bg);
-  backdrop-filter: blur(12px);
+  backdrop-filter: var(--card-backdrop);
   border: 1px solid var(--glass-border);
-  border-radius: 1.5rem;
+  border-radius: var(--radius-card);
   padding: 2rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--card-shadow);
 }
 
 .form-group {
@@ -278,7 +240,7 @@ textarea {
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-input);
   padding: 0.75rem 1rem;
   color: var(--text-main);
   font-family: inherit;
@@ -315,7 +277,7 @@ button {
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-btn);
   padding: 0.75rem 1.5rem;
   font-weight: 600;
   cursor: pointer;
@@ -903,6 +865,72 @@ button.secondary:hover {
   margin-top: 0.35rem;
   font-size: 0.7rem;
   color: #f59e0b;
+}
+
+/* Custom theme dropdown */
+.theme-dropdown {
+  position: relative;
+}
+
+.theme-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.theme-dropdown-toggle:hover {
+  color: var(--text-main);
+  transform: none;
+}
+
+.theme-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--panel-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  z-index: 100;
+  min-width: 140px;
+  box-shadow: var(--card-shadow);
+}
+
+.theme-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.theme-dropdown-item:hover {
+  background: var(--panel-tab-hover-bg);
+  color: var(--text-main);
+  transform: none;
+}
+
+.theme-dropdown-item--active {
+  color: var(--primary);
+}
+
+.theme-dropdown-item--active:hover {
+  color: var(--primary);
 }
 
 /* Animations */
