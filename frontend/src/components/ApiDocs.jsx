@@ -47,8 +47,8 @@ function CopyBtn({ text }) {
       onClick={copy}
       title="Copy"
       style={{
-        background: 'rgba(255,255,255,0.07)',
-        border: '1px solid rgba(255,255,255,0.12)',
+        background: 'var(--chat-avatar-bg)',
+        border: '1px solid var(--glass-border)',
         borderRadius: '0.4rem',
         padding: '0.25rem 0.5rem',
         cursor: 'pointer',
@@ -56,7 +56,7 @@ function CopyBtn({ text }) {
         alignItems: 'center',
         gap: '0.3rem',
         fontSize: '0.7rem',
-        color: copied ? '#10b981' : '#94a3b8',
+        color: copied ? 'var(--accent)' : 'var(--text-muted)',
         transition: 'color 0.2s',
       }}
     >
@@ -73,13 +73,13 @@ function CodeBlock({ code }) {
         <CopyBtn text={code} />
       </div>
       <pre style={{
-        background: '#000',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '0.75rem',
+        background: 'var(--json-preview-bg)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-card)',
         padding: '1rem 1rem 1rem 1.2rem',
         fontFamily: "'Courier New', monospace",
         fontSize: '0.78rem',
-        color: '#10b981',
+        color: 'var(--jh-string)',
         overflowX: 'auto',
         whiteSpace: 'pre',
         lineHeight: 1.6,
@@ -141,20 +141,20 @@ export default function ApiDocs({ schema, schemaName, apiBase }) {
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ marginBottom: '0.4rem' }}>{schema.title}</h2>
         <p className="description">{schema.description}</p>
-        <div style={{ marginTop: '1rem', padding: '0.5rem 0.8rem', background: 'rgba(0,0,0,0.3)', borderRadius: '0.5rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#818cf8' }}>
-          Base URL: <span style={{ color: '#e2e8f0' }}>{base}</span>
+        <div style={{ marginTop: '1rem', padding: '0.5rem 0.8rem', background: 'var(--diff-header-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-input)', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--primary)' }}>
+          Base URL: <span style={{ color: 'var(--text-main)' }}>{base}</span>
         </div>
       </div>
 
       {/* Endpoints table */}
       <div className="card" style={{ marginBottom: '1.5rem', padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           <Terminal size={14} />
           Endpoints
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <tr style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               <th style={{ padding: '0.6rem 1.5rem', textAlign: 'left', fontWeight: 600 }}>Method</th>
               <th style={{ padding: '0.6rem 1rem', textAlign: 'left', fontWeight: 600 }}>Path</th>
               <th style={{ padding: '0.6rem 1rem', textAlign: 'left', fontWeight: 600 }}>Description</th>
@@ -163,15 +163,15 @@ export default function ApiDocs({ schema, schemaName, apiBase }) {
             </tr>
           </thead>
           <tbody>
-            {ENDPOINTS.map((ep, i) => {
+            {ENDPOINTS.map((ep) => {
               const key = `${ep.method}${ep.suffix}`;
               const isOpen = openCurl === key;
               return (
                 <React.Fragment key={key}>
                   <tr
                     style={{
-                      borderTop: '1px solid rgba(255,255,255,0.05)',
-                      background: isOpen ? 'rgba(99,102,241,0.05)' : undefined,
+                      borderTop: '1px solid var(--glass-border)',
+                      background: isOpen ? 'var(--panel-tab-hover-bg)' : undefined,
                       cursor: 'pointer',
                     }}
                     onClick={() => setOpenCurl(isOpen ? null : key)}
@@ -179,21 +179,21 @@ export default function ApiDocs({ schema, schemaName, apiBase }) {
                     <td style={{ padding: '0.75rem 1.5rem' }}>
                       <MethodBadge method={ep.method} />
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#e2e8f0' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-main)' }}>
                       /api/data/{schemaName}{ep.suffix}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: '#94a3b8' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       {ep.description}
                     </td>
-                    <td style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', color: ep.body ? '#10b981' : '#334155' }}>
+                    <td style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', color: ep.body ? 'var(--accent)' : 'var(--jh-ln)' }}>
                       {ep.body ? 'JSON' : '—'}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.7rem', color: '#64748b' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                       {isOpen ? '▲ curl' : '▼ curl'}
                     </td>
                   </tr>
                   {isOpen && (
-                    <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
+                    <tr style={{ background: 'var(--diff-header-bg)' }}>
                       <td colSpan={5} style={{ padding: '1rem 1.5rem' }}>
                         <CodeBlock code={curlFor(ep)} />
                       </td>
@@ -209,12 +209,12 @@ export default function ApiDocs({ schema, schemaName, apiBase }) {
       {/* Properties reference */}
       {schema.properties && (
         <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--glass-border)', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Request Body Fields
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <tr style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 <th style={{ padding: '0.6rem 1.5rem', textAlign: 'left', fontWeight: 600 }}>Field</th>
                 <th style={{ padding: '0.6rem 1rem', textAlign: 'left', fontWeight: 600 }}>Type</th>
                 <th style={{ padding: '0.6rem 1rem', textAlign: 'left', fontWeight: 600 }}>Description</th>
@@ -226,14 +226,14 @@ export default function ApiDocs({ schema, schemaName, apiBase }) {
                 const format = def.format ? ` (${def.format})` : '';
                 const enumVals = def.enum ? ` [${def.enum.slice(0, 3).join(', ')}${def.enum.length > 3 ? '…' : ''}]` : '';
                 return (
-                  <tr key={key} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '0.65rem 1.5rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#818cf8' }}>
+                  <tr key={key} style={{ borderTop: '1px solid var(--glass-border)' }}>
+                    <td style={{ padding: '0.65rem 1.5rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--jh-key)' }}>
                       {key}
                     </td>
-                    <td style={{ padding: '0.65rem 1rem', fontSize: '0.75rem', color: '#f59e0b', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0.65rem 1rem', fontSize: '0.75rem', color: 'var(--jh-number)', whiteSpace: 'nowrap' }}>
                       {type}{format}{enumVals}
                     </td>
-                    <td style={{ padding: '0.65rem 1rem', fontSize: '0.8rem', color: '#94a3b8' }}>
+                    <td style={{ padding: '0.65rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       {def.description || '—'}
                     </td>
                   </tr>

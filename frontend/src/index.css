@@ -32,6 +32,8 @@ body {
   padding-bottom: 0.5rem;
   gap: 1rem;
   flex-wrap: nowrap;
+  position: relative;
+  z-index: 10;
 }
 
 .app-header h1 {
