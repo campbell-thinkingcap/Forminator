@@ -1,0 +1,98 @@
+/* ── Dark (Glassmorphism) — default ──────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --input-bg: rgba(0, 0, 0, 0.2);
+  --accent: #10b981;
+  --panel-bg: #0a0a0f;
+  --json-preview-bg: #000;
+  --select-option-bg: #1e1b4b;
+  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
+  --radius-btn: 0.75rem;
+  --radius-card: 1.5rem;
+  --radius-input: 0.75rem;
+  --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --card-backdrop: blur(12px);
+}
+
+/* ── Light ────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --accent: #10b981;
+  --panel-bg: #f1f5f9;
+  --json-preview-bg: #1e293b;
+  --select-option-bg: #f1f5f9;
+  --panel-tab-hover-bg: rgba(0, 0, 0, 0.04);
+  --radius-btn: 0.75rem;
+  --radius-card: 1.5rem;
+  --radius-input: 0.75rem;
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --card-backdrop: blur(12px);
+}
+
+/* Keep schema panel dark in light mode */
+[data-theme="light"] .schema-panel {
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(0, 0, 0, 0.2);
+  --select-option-bg: #1e1b4b;
+  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
+  --panel-bg: #0a0a0f;
+}
+
+/* ── ThinkingCap Admin ────────────────────────────────────────── */
+[data-theme="thinkingcap"] {
+  --primary: #53A3C6;
+  --primary-hover: #4086a5;
+  --bg-gradient: #f5f9fc;
+  --glass-bg: #ffffff;
+  --glass-border: #dee2e6;
+  --text-main: #333333;
+  --text-muted: #6c757d;
+  --input-bg: #ffffff;
+  --accent: #58c402;
+  --panel-bg: #ffffff;
+  --json-preview-bg: #1e293b;
+  --select-option-bg: #ffffff;
+  --panel-tab-hover-bg: #edf6fa;
+  --radius-btn: 4px;
+  --radius-card: 4px;
+  --radius-input: 4px;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --card-backdrop: none;
+}
+
+/* H1 gradient is designed for dark backgrounds — override for TC */
+[data-theme="thinkingcap"] h1 {
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #4086a5;
+  color: #4086a5;
+}
+
+/* Keep schema panel dark in ThinkingCap mode */
+[data-theme="thinkingcap"] .schema-panel {
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(0, 0, 0, 0.2);
+  --select-option-bg: #1e1b4b;
+  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
+  --panel-bg: #0a0a0f;
+}
