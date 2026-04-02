@@ -86,8 +86,8 @@ This example combines all of the above to guide an AI through collecting flight 
       "type": "string",
       "title": "Origin Airport",
       "description": "IATA code or city name for the departure location.",
-      "examples": ["YYZ", "Toronto", "JFK"],
-      "x-source": "user",
+      "x-options-source": ["YYZ", "Toronto", "JFK"],
+      "x-source": "db",
       "x-prompt": "Where are you flying from?",
       "x-hint": "You can use a city name or airport code (e.g. Toronto or YYZ)",
       "x-order": 2
@@ -96,7 +96,8 @@ This example combines all of the above to guide an AI through collecting flight 
       "type": "string",
       "title": "Destination Airport",
       "description": "IATA code or city name for the arrival location.",
-      "examples": ["LHR", "London", "CDG"],
+      "x-source" : "db",
+      "x-options-source" : ["LHR", "London", "CDG"],
       "x-prompt": "Where are you flying to?",
       "x-order": 3
     },
