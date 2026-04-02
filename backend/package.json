@@ -14,7 +14,9 @@
     "ajv-formats": "^3.0.1",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "mssql": "^11.0.1",
+    "pg": "^8.13.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

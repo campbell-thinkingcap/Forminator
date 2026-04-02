@@ -7,7 +7,8 @@ import SchemaTree from './components/SchemaTree';
 import LoginPage from './components/LoginPage';
 import ChatPanel from './components/ChatPanel';
 import EditPanel from './components/EditPanel';
-import { Code, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw, Sun, Moon } from 'lucide-react';
+import DbPanel from './components/DbPanel';
+import { Code, AlertCircle, Braces, ExternalLink, BookOpen, LayoutTemplate, LogOut, MessageSquare, Wand2, RotateCcw, Sun, Moon, Database } from 'lucide-react';
 
 function getConstDefaults(schema) {
   if (!schema?.properties) return {};
@@ -262,6 +263,12 @@ function App() {
               >
                 <Wand2 size={13} /> Edit
               </button>
+              <button
+                className={`panel-tab${leftPanel === 'db' ? ' panel-tab--active' : ''}`}
+                onClick={() => setLeftPanel('db')}
+              >
+                <Database size={13} /> DB
+              </button>
             </div>
           </div>
           <div className={`schema-panel-body${leftPanel !== 'schema' ? ' schema-panel-body--no-scroll' : ''}`}>
@@ -293,6 +300,9 @@ function App() {
               )}
               <EditPanel key={editPanelKey} schema={activeSchema} onSchemaEdit={handleSchemaEdit} />
             </div>
+            {leftPanel === 'db' && (
+              <DbPanel schema={activeSchema} />
+            )}
           </div>
         </aside>
 
