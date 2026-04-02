@@ -269,7 +269,7 @@ function App() {
         />
 
         {view === 'docs' && (
-          <div style={{ flex: 1, minWidth: 0, padding: '0 0.5rem' }}>
+          <div style={{ flex: 1, minWidth: 0, padding: '0 0.5rem', overflowY: 'auto' }}>
             {schema
               ? <ApiDocs schema={schema} schemaName={selectedSchemaName} apiBase={API_BASE} />
               : <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '3rem' }}>Select a schema from the panel on the left to view its API docs</div>
