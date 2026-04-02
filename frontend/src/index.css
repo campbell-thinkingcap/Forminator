@@ -292,6 +292,7 @@ button:hover {
 button.secondary {
   background: transparent;
   border: 1px solid var(--glass-border);
+  color: var(--text-muted);
 }
 
 button.secondary:hover {
