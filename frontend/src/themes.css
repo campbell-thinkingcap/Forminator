@@ -19,6 +19,19 @@
   --radius-input: 0.75rem;
   --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   --card-backdrop: blur(12px);
+  /* Panel internals */
+  --panel-header-bg: rgba(255, 255, 255, 0.04);
+  --diff-header-bg: rgba(0, 0, 0, 0.25);
+  --chat-avatar-bg: rgba(255, 255, 255, 0.07);
+  --chat-bubble-strong: #c7d2fe;
+  --chat-enum-bg: rgba(255, 255, 255, 0.04);
+  /* Syntax highlighting */
+  --jh-ln: #334155;
+  --jh-key: #818cf8;
+  --jh-string: #10b981;
+  --jh-number: #f59e0b;
+  --jh-bool: #f472b6;
+  --jh-null: #64748b;
 }
 
 /* ── Light ────────────────────────────────────────────────────── */
@@ -41,18 +54,19 @@
   --radius-input: 0.75rem;
   --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   --card-backdrop: blur(12px);
-}
-
-/* Keep schema panel dark in light mode */
-[data-theme="light"] .schema-panel {
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --input-bg: rgba(0, 0, 0, 0.2);
-  --select-option-bg: #1e1b4b;
-  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
-  --panel-bg: #0a0a0f;
+  /* Panel internals */
+  --panel-header-bg: rgba(0, 0, 0, 0.03);
+  --diff-header-bg: rgba(0, 0, 0, 0.04);
+  --chat-avatar-bg: rgba(0, 0, 0, 0.05);
+  --chat-bubble-strong: #4f46e5;
+  --chat-enum-bg: rgba(0, 0, 0, 0.03);
+  /* Syntax highlighting */
+  --jh-ln: #9ca3af;
+  --jh-key: #4f46e5;
+  --jh-string: #059669;
+  --jh-number: #d97706;
+  --jh-bool: #c026d3;
+  --jh-null: #6b7280;
 }
 
 /* ── ThinkingCap Admin ────────────────────────────────────────── */
@@ -75,6 +89,19 @@
   --radius-input: 4px;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   --card-backdrop: none;
+  /* Panel internals */
+  --panel-header-bg: #edf6fa;
+  --diff-header-bg: #f5f9fc;
+  --chat-avatar-bg: #edf6fa;
+  --chat-bubble-strong: #4086a5;
+  --chat-enum-bg: #f5f9fc;
+  /* Syntax highlighting */
+  --jh-ln: #b0bec5;
+  --jh-key: #4086a5;
+  --jh-string: #059669;
+  --jh-number: #d97706;
+  --jh-bool: #c026d3;
+  --jh-null: #9ca3af;
 }
 
 /* H1 gradient is designed for dark backgrounds — override for TC */
@@ -83,16 +110,4 @@
   -webkit-background-clip: unset;
   -webkit-text-fill-color: #4086a5;
   color: #4086a5;
-}
-
-/* Keep schema panel dark in ThinkingCap mode */
-[data-theme="thinkingcap"] .schema-panel {
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --input-bg: rgba(0, 0, 0, 0.2);
-  --select-option-bg: #1e1b4b;
-  --panel-tab-hover-bg: rgba(255, 255, 255, 0.04);
-  --panel-bg: #0a0a0f;
 }
