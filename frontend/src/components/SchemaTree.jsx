@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronRight, ChevronLeft, ChevronDown, FileJson, FolderOpen, Folder, RefreshCw, X, Clock, History } from 'lucide-react';
 import JsonHighlight from './JsonHighlight';
+import SideBySideDiff from './SideBySideDiff';
 
 const AZURE_API = `${import.meta.env.VITE_API_BASE ?? '/api'}/azure`;
 
@@ -127,7 +128,7 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, onViewHistory })
   );
 }
 
-export default function SchemaTree({ onSelect, selectedBlobDir }) {
+export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema }) {
   const [status, setStatus] = useState('idle');
   const [tree, setTree] = useState([]);
   const [total, setTotal] = useState(0);
@@ -363,7 +364,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
               background: '#13131a',
               border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: '0.75rem',
-              width: '860px',
+              width: '1120px',
               maxWidth: '95vw',
               height: '72vh',
               display: 'flex',
@@ -459,24 +460,36 @@ export default function SchemaTree({ onSelect, selectedBlobDir }) {
                 )}
               </div>
 
-              {/* Right: preview */}
-              <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '0.75rem 1rem' }}>
+              {/* Right: preview / diff */}
+              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {!selectedArchive ? (
-                  <div style={{ color: '#334155', fontSize: '0.78rem', paddingTop: '1rem' }}>
+                  <div style={{ color: '#334155', fontSize: '0.78rem', padding: '1rem 1.25rem' }}>
                     Select a version on the left to preview it.
                   </div>
                 ) : preview === 'loading' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1rem 1.25rem' }}>
                     <RefreshCw size={13} className="spin" /> Loading preview…
                   </div>
                 ) : preview === 'error' ? (
-                  <div style={{ color: '#ef4444', fontSize: '0.75rem' }}>Failed to load preview.</div>
+                  <div style={{ color: '#ef4444', fontSize: '0.75rem', padding: '1rem 1.25rem' }}>Failed to load preview.</div>
                 ) : preview.raw ? (
-                  <pre style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '0.72rem', color: '#94a3b8', margin: 0, whiteSpace: 'pre', lineHeight: 1.6 }}>
+                  <pre style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '0.72rem', color: '#94a3b8', margin: 0, padding: '0.75rem 1rem', whiteSpace: 'pre', lineHeight: 1.6, overflowY: 'auto', flex: 1 }}>
                     {preview.content}
                   </pre>
+                ) : currentSchema ? (
+                  <SideBySideDiff
+                    oldValue={preview.content}
+                    newValue={currentSchema}
+                    oldLabel={new Date(selectedArchive.lastModified).toLocaleString(undefined, {
+                      year: 'numeric', month: 'short', day: 'numeric',
+                      hour: '2-digit', minute: '2-digit',
+                    })}
+                    newLabel="Current version"
+                  />
                 ) : (
-                  <JsonHighlight value={preview.content} />
+                  <div style={{ overflowY: 'auto', flex: 1, padding: '0.75rem 1rem' }}>
+                    <JsonHighlight value={preview.content} />
+                  </div>
                 )}
               </div>
             </div>

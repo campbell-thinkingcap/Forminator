@@ -208,6 +208,7 @@ function App() {
       <div style={{ display: 'flex', alignItems: 'stretch', flex: 1, minHeight: 0 }}>
         <SchemaTree
           selectedBlobDir={selectedBlobDir}
+          currentSchema={schema}
           onSelect={async (azureSchema) => {
             setSelectedBlobDir(azureSchema.blobDir);
             setLoading(true);

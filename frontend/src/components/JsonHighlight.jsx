@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-function highlight(json) {
+export function highlight(json) {
   const escaped = json
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -39,7 +39,7 @@ function findBlockRange(rawLines, key) {
 }
 
 // Simple LCS-based line diff. Returns array of { type: 'equal'|'add'|'remove', line }
-function diffLines(oldLines, newLines) {
+export function diffLines(oldLines, newLines) {
   const m = oldLines.length;
   const n = newLines.length;
 
