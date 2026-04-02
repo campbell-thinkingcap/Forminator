@@ -37,6 +37,11 @@ jobs:
           AZ_ACCOUNT_NAME: ${{ secrets.AZURE_ACCOUNT_NAME }}
           AZ_ACCOUNT_KEY: ${{ secrets.AZURE_ACCOUNT_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MSSQL_HOST: ${{ secrets.MSSQL_HOST }}
+          MSSQL_PORT: ${{ secrets.MSSQL_PORT }}
+          MSSQL_DATABASE: ${{ secrets.MSSQL_DATABASE }}
+          MSSQL_USER: ${{ secrets.MSSQL_USER }}
+          MSSQL_PASSWORD: ${{ secrets.MSSQL_PASSWORD }}
         run: |
           az containerapp up \
             --name $CONTAINER_APP \
@@ -48,4 +53,4 @@ jobs:
             --registry-password ${{ secrets.ACR_PASSWORD }} \
             --target-port 3001 \
             --ingress external \
-            --env-vars "AZURE_ACCOUNT_NAME=$AZ_ACCOUNT_NAME" "AZURE_ACCOUNT_KEY=$AZ_ACCOUNT_KEY" "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+            --env-vars "AZURE_ACCOUNT_NAME=$AZ_ACCOUNT_NAME" "AZURE_ACCOUNT_KEY=$AZ_ACCOUNT_KEY" "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" "MSSQL_HOST=$MSSQL_HOST" "MSSQL_PORT=$MSSQL_PORT" "MSSQL_DATABASE=$MSSQL_DATABASE" "MSSQL_USER=$MSSQL_USER" "MSSQL_PASSWORD=$MSSQL_PASSWORD"
