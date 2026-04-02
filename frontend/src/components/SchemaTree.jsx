@@ -61,15 +61,15 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, onViewHistory })
           cursor: 'pointer',
           borderRadius: '0.35rem',
           fontSize: '0.75rem',
-          color: isSelected ? '#e2e8f0' : '#94a3b8',
-          background: isSelected ? 'rgba(99,102,241,0.2)' : 'transparent',
+          color: isSelected ? 'var(--text-main)' : 'var(--text-muted)',
+          background: isSelected ? 'var(--primary-subtle)' : 'transparent',
           transition: 'background 0.1s, color 0.1s',
           userSelect: 'none',
         }}
-        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--panel-tab-hover-bg)'; }}
         onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
       >
-        <FileJson size={12} color={isSelected ? '#818cf8' : '#475569'} style={{ flexShrink: 0 }} />
+        <FileJson size={12} color={isSelected ? 'var(--primary)' : 'var(--text-muted)'} style={{ flexShrink: 0 }} />
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {node.label}
         </span>
@@ -91,21 +91,24 @@ function TreeNode({ node, depth = 0, selectedBlobDir, onSelect, onViewHistory })
           borderRadius: '0.35rem',
           fontSize: '0.75rem',
           fontWeight: 600,
-          color: '#64748b',
+          color: 'var(--text-muted)',
           userSelect: 'none',
         }}
-        onMouseEnter={e => { e.currentTarget.style.color = '#94a3b8'; }}
-        onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; }}
+        onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-main)'; }}
+        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
       >
         <span style={{ display: 'flex', alignItems: 'center', width: 14, flexShrink: 0 }}>
           {isFolder && (open ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
         </span>
-        {open ? <FolderOpen size={13} color="#818cf8" style={{ flexShrink: 0 }} /> : <Folder size={13} color="#475569" style={{ flexShrink: 0 }} />}
+        {open
+          ? <FolderOpen size={13} color="var(--primary)" style={{ flexShrink: 0 }} />
+          : <Folder size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+        }
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {node.label}
         </span>
         {isFolder && (
-          <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: '#334155', flexShrink: 0, paddingRight: '0.25rem' }}>
+          <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'var(--jh-ln)', flexShrink: 0, paddingRight: '0.25rem' }}>
             {node.children.length}
           </span>
         )}
@@ -244,7 +247,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
     <>
       <PanelShell collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}>
         {status === 'loading' ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', padding: '1rem' }}>
             <RefreshCw size={13} className="spin" /> Loading schemas...
           </div>
         ) : status === 'error' ? (
@@ -256,7 +259,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
           </div>
         ) : (
           <>
-            <div style={{ padding: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
+            <div style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)', position: 'relative' }}>
               <input
                 value={filter}
                 onChange={e => setFilter(e.target.value)}
@@ -276,7 +279,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
                     border: 'none',
                     padding: 0,
                     cursor: 'pointer',
-                    color: '#64748b',
+                    color: 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
                     borderRadius: '50%',
@@ -311,11 +314,11 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
             top: contextMenu.y,
             left: contextMenu.x,
             zIndex: 1000,
-            background: '#13131a',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '0.5rem',
+            background: 'var(--panel-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-btn)',
             padding: '0.3rem',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            boxShadow: 'var(--card-shadow)',
             minWidth: '150px',
           }}
         >
@@ -330,12 +333,12 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
               background: 'none',
               border: 'none',
               borderRadius: '0.35rem',
-              color: '#94a3b8',
+              color: 'var(--text-muted)',
               fontSize: '0.78rem',
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--panel-tab-hover-bg)'}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           >
             <History size={13} />
@@ -361,15 +364,15 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#13131a',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: '0.75rem',
+              background: 'var(--panel-bg)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-card)',
               width: '1120px',
               maxWidth: '95vw',
               height: '72vh',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+              boxShadow: 'var(--card-shadow)',
             }}
           >
             {/* Header */}
@@ -378,18 +381,18 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '0.85rem 1rem',
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              borderBottom: '1px solid var(--glass-border)',
               flexShrink: 0,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Clock size={14} color="#818cf8" />
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e2e8f0' }}>
+                <Clock size={14} color="var(--primary)" />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
                   {historyModal === 'loading' ? 'Loading…' : historyModal.schema.blobDir}
                 </span>
               </div>
               <button
                 onClick={() => { setHistoryModal(null); setSelectedArchive(null); setPreview(null); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', padding: '0.15rem', borderRadius: '0.3rem' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '0.15rem', borderRadius: '0.3rem' }}
               >
                 <X size={15} />
               </button>
@@ -398,9 +401,9 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
             {/* Body — split pane */}
             <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
               {/* Left: version list */}
-              <div style={{ width: '260px', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.08)', overflowY: 'auto', padding: '0.5rem 0' }}>
+              <div style={{ width: '260px', flexShrink: 0, borderRight: '1px solid var(--glass-border)', overflowY: 'auto', padding: '0.5rem 0' }}>
                 {historyModal === 'loading' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1.25rem 1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', padding: '1.25rem 1rem' }}>
                     <RefreshCw size={13} className="spin" /> Loading…
                   </div>
                 ) : historyModal.archives === null ? (
@@ -408,7 +411,7 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
                     Failed to load history.
                   </div>
                 ) : historyModal.archives.length === 0 ? (
-                  <div style={{ color: '#475569', fontSize: '0.75rem', padding: '1.25rem 1rem' }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', padding: '1.25rem 1rem' }}>
                     No history yet — archived versions will appear here after saving edits.
                   </div>
                 ) : (
@@ -422,20 +425,20 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
                         style={{
                           padding: '0.55rem 0.75rem',
                           cursor: 'pointer',
-                          background: isSelected ? 'rgba(99,102,241,0.15)' : 'transparent',
-                          borderLeft: isSelected ? '2px solid #818cf8' : '2px solid transparent',
+                          background: isSelected ? 'var(--primary-subtle)' : 'transparent',
+                          borderLeft: isSelected ? '2px solid var(--primary)' : '2px solid transparent',
                           transition: 'background 0.1s',
                         }}
-                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--panel-tab-hover-bg)'; }}
                         onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                       >
-                        <div style={{ fontSize: '0.75rem', color: isSelected ? '#c7d2fe' : '#94a3b8', marginBottom: '0.2rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: isSelected ? 'var(--chat-bubble-strong)' : 'var(--text-muted)', marginBottom: '0.2rem' }}>
                           {new Date(archive.lastModified).toLocaleString(undefined, {
                             year: 'numeric', month: 'short', day: 'numeric',
                             hour: '2-digit', minute: '2-digit',
                           })}
                         </div>
-                        <div style={{ fontSize: '0.65rem', color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '0.35rem' }}>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--jh-ln)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '0.35rem' }}>
                           {archive.name}
                         </div>
                         <button
@@ -445,9 +448,9 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
                             fontSize: '0.68rem',
                             padding: '0.2rem 0.5rem',
                             borderRadius: '0.3rem',
-                            background: isRollingBack ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)',
-                            border: '1px solid rgba(99,102,241,0.3)',
-                            color: rollingBack && !isRollingBack ? '#334155' : '#818cf8',
+                            background: isRollingBack ? 'var(--primary-subtle)' : 'var(--primary-subtle)',
+                            border: '1px solid var(--glass-border)',
+                            color: rollingBack && !isRollingBack ? 'var(--jh-ln)' : 'var(--primary)',
                             cursor: rollingBack ? 'default' : 'pointer',
                             opacity: rollingBack && !isRollingBack ? 0.4 : 1,
                           }}
@@ -463,17 +466,17 @@ export default function SchemaTree({ onSelect, selectedBlobDir, currentSchema })
               {/* Right: preview / diff */}
               <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {!selectedArchive ? (
-                  <div style={{ color: '#334155', fontSize: '0.78rem', padding: '1rem 1.25rem' }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', padding: '1rem 1.25rem' }}>
                     Select a version on the left to preview it.
                   </div>
                 ) : preview === 'loading' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.75rem', padding: '1rem 1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', padding: '1rem 1.25rem' }}>
                     <RefreshCw size={13} className="spin" /> Loading preview…
                   </div>
                 ) : preview === 'error' ? (
                   <div style={{ color: '#ef4444', fontSize: '0.75rem', padding: '1rem 1.25rem' }}>Failed to load preview.</div>
                 ) : preview.raw ? (
-                  <pre style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '0.72rem', color: '#94a3b8', margin: 0, padding: '0.75rem 1rem', whiteSpace: 'pre', lineHeight: 1.6, overflowY: 'auto', flex: 1 }}>
+                  <pre style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0, padding: '0.75rem 1rem', whiteSpace: 'pre', lineHeight: 1.6, overflowY: 'auto', flex: 1 }}>
                     {preview.content}
                   </pre>
                 ) : currentSchema ? (
@@ -507,21 +510,21 @@ function PanelShell({ children, collapsed, onToggle }) {
       flexShrink: 0,
       display: 'flex',
       flexDirection: 'column',
-      background: '#0a0a0f',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '1rem',
+      background: 'var(--panel-bg)',
+      border: '1px solid var(--glass-border)',
+      borderRadius: 'var(--radius-card)',
       overflow: 'hidden',
       marginRight: '8px',
       transition: 'width 0.2s ease',
     }}>
       <div style={{
         padding: '0.6rem 0.75rem',
-        borderBottom: collapsed ? 'none' : '1px solid rgba(255,255,255,0.07)',
+        borderBottom: collapsed ? 'none' : '1px solid var(--glass-border)',
         fontSize: '0.7rem',
         fontWeight: 700,
         textTransform: 'uppercase',
         letterSpacing: '0.06em',
-        color: '#64748b',
+        color: 'var(--text-muted)',
         display: 'flex',
         alignItems: 'center',
         gap: '0.4rem',
@@ -530,7 +533,7 @@ function PanelShell({ children, collapsed, onToggle }) {
       }}>
         {!collapsed && (
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <FolderOpen size={13} color="#818cf8" /> Thinkingcap Schemas
+            <FolderOpen size={13} color="var(--primary)" /> Thinkingcap Schemas
           </span>
         )}
         <button
@@ -541,7 +544,7 @@ function PanelShell({ children, collapsed, onToggle }) {
             border: 'none',
             padding: '0.1rem',
             cursor: 'pointer',
-            color: '#475569',
+            color: 'var(--text-muted)',
             display: 'flex',
             alignItems: 'center',
             borderRadius: '0.3rem',
