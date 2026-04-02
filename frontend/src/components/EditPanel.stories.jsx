@@ -5,7 +5,7 @@ export default {
   component: EditPanel,
   decorators: [
     (Story) => (
-      <div style={{ background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1rem', width: '420px', height: '520px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-card)', padding: '1rem', width: '420px', height: '520px', display: 'flex', flexDirection: 'column' }}>
         <Story />
       </div>
     ),
