@@ -15,6 +15,7 @@ export default function SchemaFinder() {
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [generateResult, setGenerateResult] = useState(null);
+  const [catalogStatus, setCatalogStatus] = useState(null); // { exists, lastGenerated }
 
   // Apply saved theme
   useEffect(() => {
@@ -22,6 +23,14 @@ export default function SchemaFinder() {
     if (stored && ['dark', 'light', 'thinkingcap'].includes(stored)) {
       document.documentElement.setAttribute('data-theme', stored);
     }
+  }, []);
+
+  // Fetch catalog status on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/catalog/status`)
+      .then(r => r.json())
+      .then(setCatalogStatus)
+      .catch(() => {});
   }, []);
 
   const handleSearch = async (e) => {
@@ -59,6 +68,8 @@ export default function SchemaFinder() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setGenerateResult(data);
+      // Refresh status to show updated timestamp
+      fetch(`${API_BASE}/catalog/status`).then(r => r.json()).then(setCatalogStatus).catch(() => {});
     } catch (err) {
       setError(`Generate failed: ${err.message}`);
     } finally {
@@ -193,6 +204,27 @@ export default function SchemaFinder() {
 
         <div>
           <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Catalog Management</h2>
+          <div style={{ marginBottom: '1rem' }}>
+            {catalogStatus === null && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>Checking catalog status…</p>
+            )}
+            {catalogStatus?.exists === false && (
+              <p style={{
+                fontSize: '0.85rem', margin: 0,
+                color: '#f87171',
+              }}>
+                No catalog found — generate it before searching.
+              </p>
+            )}
+            {catalogStatus?.exists === true && (
+              <p style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-muted)' }}>
+                Catalog last generated:{' '}
+                <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>
+                  {new Date(catalogStatus.lastGenerated).toLocaleString()}
+                </span>
+              </p>
+            )}
+          </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
             Run this once (or after schemas change) to build the enriched catalog used for intent routing.
             Takes around 30–60 seconds for 164 schemas.

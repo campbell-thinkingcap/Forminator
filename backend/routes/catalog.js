@@ -71,6 +71,18 @@ Return ONLY a JSON array with ${batch.length} objects. No explanation.`;
   return JSON.parse(match ? match[0] : raw);
 }
 
+// GET /api/catalog/status — returns whether the catalog exists and when it was last generated
+router.get('/status', async (req, res) => {
+  try {
+    const container = getContainerClient();
+    const props = await container.getBlobClient(CATALOG_BLOB).getProperties();
+    res.json({ exists: true, lastGenerated: props.lastModified ?? null });
+  } catch (err) {
+    if (err.statusCode === 404) return res.json({ exists: false, lastGenerated: null });
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/catalog — returns current catalog from Azure (cached)
 router.get('/', async (req, res) => {
   try {
