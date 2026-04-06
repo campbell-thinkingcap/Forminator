@@ -7,12 +7,23 @@ async function callTool(name, args) {
     { requestInit: { headers: { 'X-API-Key': process.env.CAPGPT_API_KEY } } }
   );
   const client = new Client({ name: 'forminator', version: '1.0.0' });
-  await client.connect(transport);
+  try {
+    await client.connect(transport);
+  } catch (err) {
+    console.error(`[capgpt] connect failed: ${err.message}`);
+    throw err;
+  }
   try {
     const result = await client.callTool({ name, arguments: args });
     const text = result.content?.[0]?.text ?? null;
-    if (!text) return null;
+    if (!text) {
+      console.warn(`[capgpt] ${name} returned empty content`);
+      return null;
+    }
     try { return JSON.parse(text); } catch { return text; }
+  } catch (err) {
+    console.error(`[capgpt] ${name} failed: ${err.message}`);
+    throw err;
   } finally {
     await client.close();
   }

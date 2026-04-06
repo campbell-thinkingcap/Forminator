@@ -233,18 +233,37 @@ router.post('/generate', async (req, res) => {
   if (process.env.CAPGPT_URL && process.env.CAPGPT_API_KEY && catalogCache) {
     const CAPGPT_BATCH = 5;
     let capgptEnriched = 0;
+    let capgptFailed = 0;
+    console.log(`[capgpt] Starting background enrichment for ${catalogCache.length} schemas...`);
+    // Test connectivity with a single call before running the full loop
+    capgpt.callTool('kb_search', { query: 'test', limit: 1 })
+      .then(probe => {
+        console.log(`[capgpt] Connectivity probe OK. Sample response type: ${typeof probe}, keys: ${probe && typeof probe === 'object' ? Object.keys(probe).join(',') : 'n/a'}`);
+      })
+      .catch(err => {
+        console.error(`[capgpt] Connectivity probe FAILED: ${err.message} — background enrichment will likely fail too`);
+      });
     (async () => {
       try {
         for (let i = 0; i < catalogCache.length; i += CAPGPT_BATCH) {
           const batch = catalogCache.slice(i, i + CAPGPT_BATCH);
-          const results = await Promise.all(batch.map(entry => capgptEnrich(entry).catch(() => null)));
+          const results = await Promise.all(batch.map(entry =>
+            capgptEnrich(entry).catch(err => {
+              console.error(`[capgpt] enrich failed for "${entry.blobDir}": ${err.message}`);
+              return null;
+            })
+          ));
           for (let j = 0; j < batch.length; j++) {
             batch[j].kbContext = results[j]?.kbContext ?? [];
             batch[j].glossaryTerms = results[j]?.glossaryTerms ?? [];
-            if (results[j]) capgptEnriched++;
+            if (results[j]) capgptEnriched++; else capgptFailed++;
+          }
+          if (i === 0) {
+            // Log first batch result so we know parsing is working
+            console.log(`[capgpt] First batch sample — kbContext: ${JSON.stringify(batch[0].kbContext)}, glossaryTerms: ${JSON.stringify(batch[0].glossaryTerms)}`);
           }
         }
-        console.log(`[catalog] CapGPT enriched ${capgptEnriched}/${catalogCache.length} schemas. Saving...`);
+        console.log(`[capgpt] Enrichment complete: ${capgptEnriched} ok, ${capgptFailed} failed. Saving to Azure...`);
         const enrichedContent = Buffer.from(JSON.stringify(catalogCache, null, 2), 'utf8');
         const container = getContainerClient();
         await container.getBlockBlobClient(CATALOG_BLOB).upload(enrichedContent, enrichedContent.length, {
@@ -252,11 +271,13 @@ router.post('/generate', async (req, res) => {
           blobHTTPHeaders: { blobContentType: 'application/json' },
         });
         catalogCacheTime = Date.now();
-        console.log('[catalog] CapGPT enrichment saved to Azure.');
+        console.log('[capgpt] Enriched catalog saved to Azure.');
       } catch (err) {
-        console.error('[catalog] CapGPT background enrichment failed:', err.message);
+        console.error('[capgpt] Background enrichment crashed:', err.message);
       }
     })();
+  } else {
+    console.warn(`[capgpt] Skipping enrichment — CAPGPT_URL set: ${!!process.env.CAPGPT_URL}, CAPGPT_API_KEY set: ${!!process.env.CAPGPT_API_KEY}, catalogCache set: ${!!catalogCache}`);
   }
 });
 
