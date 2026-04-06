@@ -130,6 +130,7 @@ router.get('/', async (req, res) => {
 // POST /api/catalog/generate — builds the enriched catalog and saves to Azure
 // Takes ~30-60 seconds for 164 schemas (processed in batches of 15)
 router.post('/generate', async (req, res) => {
+  try {
   const container = getContainerClient();
 
   // 1. List all schemas
@@ -212,29 +213,13 @@ router.post('/generate', async (req, res) => {
       .slice(0, 6);
   }
 
-  // 5b. CapGPT enrichment — add kbContext and glossaryTerms in batches of 5
-  const CAPGPT_BATCH = 5;
-  let capgptEnriched = 0;
-  if (process.env.CAPGPT_URL && process.env.CAPGPT_API_KEY) {
-    for (let i = 0; i < catalog.length; i += CAPGPT_BATCH) {
-      const batch = catalog.slice(i, i + CAPGPT_BATCH);
-      const results = await Promise.all(batch.map(entry => capgptEnrich(entry).catch(() => null)));
-      for (let j = 0; j < batch.length; j++) {
-        batch[j].kbContext = results[j]?.kbContext ?? [];
-        batch[j].glossaryTerms = results[j]?.glossaryTerms ?? [];
-        if (results[j]) capgptEnriched++;
-      }
-    }
-    console.log(`[catalog] CapGPT enriched ${capgptEnriched}/${catalog.length} schemas.`);
-  } else {
-    console.log('[catalog] CAPGPT_URL/CAPGPT_API_KEY not set — skipping CapGPT enrichment.');
-    for (const entry of catalog) {
-      entry.kbContext = [];
-      entry.glossaryTerms = [];
-    }
+  // 5b. Initialise empty CapGPT fields — enrichment runs in the background after response
+  for (const entry of catalog) {
+    entry.kbContext = [];
+    entry.glossaryTerms = [];
   }
 
-  // 6. Save to Azure
+  // 6. Save to Azure and respond — CapGPT enrichment runs after this
   const content = Buffer.from(JSON.stringify(catalog, null, 2), 'utf8');
   await container.getBlockBlobClient(CATALOG_BLOB).upload(content, content.length, {
     overwrite: true,
@@ -248,6 +233,41 @@ router.post('/generate', async (req, res) => {
   const errors = [...fetchErrors, ...enrichErrors];
   console.log(`[catalog] Done. ${catalog.length} entries. ${errors.length} errors.`);
   res.json({ generated: catalog.length, errors });
+
+  } catch (err) {
+    console.error('[catalog] Generate failed:', err);
+    if (!res.headersSent) res.status(500).json({ error: err.message });
+  }
+
+  // 5b. CapGPT enrichment — runs detached after response so it doesn't block the HTTP request
+  if (process.env.CAPGPT_URL && process.env.CAPGPT_API_KEY && catalogCache) {
+    const CAPGPT_BATCH = 5;
+    let capgptEnriched = 0;
+    (async () => {
+      try {
+        for (let i = 0; i < catalogCache.length; i += CAPGPT_BATCH) {
+          const batch = catalogCache.slice(i, i + CAPGPT_BATCH);
+          const results = await Promise.all(batch.map(entry => capgptEnrich(entry).catch(() => null)));
+          for (let j = 0; j < batch.length; j++) {
+            batch[j].kbContext = results[j]?.kbContext ?? [];
+            batch[j].glossaryTerms = results[j]?.glossaryTerms ?? [];
+            if (results[j]) capgptEnriched++;
+          }
+        }
+        console.log(`[catalog] CapGPT enriched ${capgptEnriched}/${catalogCache.length} schemas. Saving...`);
+        const enrichedContent = Buffer.from(JSON.stringify(catalogCache, null, 2), 'utf8');
+        const container = getContainerClient();
+        await container.getBlockBlobClient(CATALOG_BLOB).upload(enrichedContent, enrichedContent.length, {
+          overwrite: true,
+          blobHTTPHeaders: { blobContentType: 'application/json' },
+        });
+        catalogCacheTime = Date.now();
+        console.log('[catalog] CapGPT enrichment saved to Azure.');
+      } catch (err) {
+        console.error('[catalog] CapGPT background enrichment failed:', err.message);
+      }
+    })();
+  }
 });
 
 // POST /api/catalog/intent — route a natural-language query to schemas
