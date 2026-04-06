@@ -2,6 +2,7 @@ const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storag
 const Anthropic = require('@anthropic-ai/sdk');
 const express = require('express');
 const router = express.Router();
+const capgpt = require('../services/capgpt');
 
 const SCHEMAS_CONTAINER = 'schemas';
 const CATALOG_BLOB = 'schema-catalog.json';
@@ -69,6 +70,36 @@ Return ONLY a JSON array with ${batch.length} objects. No explanation.`;
   const raw = response.content[0].text.trim();
   const match = raw.match(/\[[\s\S]*\]/);
   return JSON.parse(match ? match[0] : raw);
+}
+
+// Enrich a single catalog entry with CapGPT KB context and glossary terms
+async function capgptEnrich(entry) {
+  const query = [entry.title, entry.entity].filter(Boolean).join(' ');
+  const [kbRaw, glossaryRaw] = await Promise.all([
+    capgpt.callTool('kb_search', { query, limit: 3 }).catch(() => null),
+    capgpt.callTool('glossary_search', { query: entry.entity || entry.title, limit: 5 }).catch(() => null),
+  ]);
+
+  let kbContext = [];
+  if (kbRaw) {
+    try {
+      const docs = JSON.parse(kbRaw);
+      kbContext = (Array.isArray(docs) ? docs : docs.results ?? [])
+        .map(d => d.title ? `${d.title}: ${(d.summary ?? d.description ?? '').substring(0, 100)}` : null)
+        .filter(Boolean);
+    } catch { /* leave empty */ }
+  }
+
+  let glossaryTerms = [];
+  if (glossaryRaw) {
+    try {
+      const terms = JSON.parse(glossaryRaw);
+      glossaryTerms = (Array.isArray(terms) ? terms : terms.results ?? [])
+        .flatMap(t => [t.term, ...(t.synonyms ?? [])].filter(Boolean));
+    } catch { /* leave empty */ }
+  }
+
+  return { kbContext, glossaryTerms };
 }
 
 // GET /api/catalog/status — returns whether the catalog exists and when it was last generated
@@ -181,6 +212,28 @@ router.post('/generate', async (req, res) => {
       .slice(0, 6);
   }
 
+  // 5b. CapGPT enrichment — add kbContext and glossaryTerms in batches of 5
+  const CAPGPT_BATCH = 5;
+  let capgptEnriched = 0;
+  if (process.env.CAPGPT_URL && process.env.CAPGPT_API_KEY) {
+    for (let i = 0; i < catalog.length; i += CAPGPT_BATCH) {
+      const batch = catalog.slice(i, i + CAPGPT_BATCH);
+      const results = await Promise.all(batch.map(entry => capgptEnrich(entry).catch(() => null)));
+      for (let j = 0; j < batch.length; j++) {
+        batch[j].kbContext = results[j]?.kbContext ?? [];
+        batch[j].glossaryTerms = results[j]?.glossaryTerms ?? [];
+        if (results[j]) capgptEnriched++;
+      }
+    }
+    console.log(`[catalog] CapGPT enriched ${capgptEnriched}/${catalog.length} schemas.`);
+  } else {
+    console.log('[catalog] CAPGPT_URL/CAPGPT_API_KEY not set — skipping CapGPT enrichment.');
+    for (const entry of catalog) {
+      entry.kbContext = [];
+      entry.glossaryTerms = [];
+    }
+  }
+
   // 6. Save to Azure
   const content = Buffer.from(JSON.stringify(catalog, null, 2), 'utf8');
   await container.getBlockBlobClient(CATALOG_BLOB).upload(content, content.length, {
@@ -220,6 +273,8 @@ router.post('/intent', async (req, res) => {
     actions: s.actions,
     keywords: s.keywords,
     intentExamples: s.intentExamples,
+    kbContext: s.kbContext ?? [],
+    glossaryTerms: s.glossaryTerms ?? [],
   }));
 
   const prompt = `You are a schema router. Given a user's natural-language query, return the most relevant schemas from the catalog.
@@ -243,7 +298,32 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
     const raw = response.content[0].text.trim();
     const match = raw.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(match ? match[0] : raw);
-    res.json({ query, matches: parsed.matches ?? [] });
+    let matches = parsed.matches ?? [];
+
+    // Fallback: if all matches are low confidence and CapGPT is configured, search KB
+    // and surface any catalog entries whose kbContext overlaps with the returned doc titles
+    const allLow = matches.length === 0 || matches.every(m => m.confidence === 'low');
+    if (allLow && process.env.CAPGPT_URL && process.env.CAPGPT_API_KEY) {
+      try {
+        const kbRaw = await capgpt.callTool('kb_search', { query, limit: 5 });
+        if (kbRaw) {
+          const kbDocs = JSON.parse(kbRaw);
+          const kbTitles = (Array.isArray(kbDocs) ? kbDocs : kbDocs.results ?? [])
+            .map(d => (d.title ?? '').toLowerCase());
+          const fallback = catalog
+            .filter(s =>
+              (s.kbContext ?? []).some(ctx =>
+                kbTitles.some(t => ctx.toLowerCase().includes(t) || t.includes(ctx.toLowerCase().split(':')[0]))
+              )
+            )
+            .slice(0, 3)
+            .map(s => ({ blobDir: s.blobDir, title: s.title, confidence: 'low', reason: 'Matched via CapGPT KB search fallback' }));
+          if (fallback.length > 0) matches = [...matches, ...fallback];
+        }
+      } catch { /* fallback is best-effort */ }
+    }
+
+    res.json({ query, matches });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
