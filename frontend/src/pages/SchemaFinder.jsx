@@ -16,6 +16,8 @@ export default function SchemaFinder() {
   const [generating, setGenerating] = useState(false);
   const [generateResult, setGenerateResult] = useState(null);
   const [catalogStatus, setCatalogStatus] = useState(null); // { exists, lastGenerated }
+  const [catalogPreview, setCatalogPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Apply saved theme
   useEffect(() => {
@@ -246,6 +248,60 @@ export default function SchemaFinder() {
           >
             {generating ? 'Generating… (this takes ~30-60s)' : 'Generate / Refresh Catalog'}
           </button>
+          <button
+            onClick={async () => {
+              if (catalogPreview) { setCatalogPreview(null); return; }
+              setPreviewLoading(true);
+              try {
+                const res = await fetch(`${API_BASE}/catalog`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                setCatalogPreview(await res.json());
+              } catch (err) {
+                setError(`Preview failed: ${err.message}`);
+              } finally {
+                setPreviewLoading(false);
+              }
+            }}
+            disabled={previewLoading}
+            style={{
+              marginLeft: '0.5rem',
+              padding: '0.6rem 1.25rem',
+              borderRadius: 'var(--radius-btn)',
+              background: 'var(--glass-bg)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--glass-border)',
+              cursor: previewLoading ? 'wait' : 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              opacity: previewLoading ? 0.7 : 1,
+            }}
+          >
+            {previewLoading ? 'Loading…' : catalogPreview ? 'Hide Preview' : 'Preview Catalog'}
+          </button>
+
+          {catalogPreview && (
+            <div style={{ marginTop: '1rem' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                {catalogPreview.length} entries
+              </div>
+              <pre style={{
+                maxHeight: 400,
+                overflowY: 'auto',
+                background: 'var(--glass-bg)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-input)',
+                padding: '1rem',
+                fontSize: '0.75rem',
+                lineHeight: 1.5,
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+              }}>
+                {JSON.stringify(catalogPreview, null, 2)}
+              </pre>
+            </div>
+          )}
+
           {generateResult && (
             <div style={{
               marginTop: '0.75rem',
