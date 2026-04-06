@@ -10,7 +10,9 @@ async function callTool(name, args) {
   await client.connect(transport);
   try {
     const result = await client.callTool({ name, arguments: args });
-    return result.content?.[0]?.text ?? null;
+    const text = result.content?.[0]?.text ?? null;
+    if (!text) return null;
+    try { return JSON.parse(text); } catch { return text; }
   } finally {
     await client.close();
   }

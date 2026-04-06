@@ -80,24 +80,14 @@ async function capgptEnrich(entry) {
     capgpt.callTool('glossary_search', { query: entry.entity || entry.title, limit: 5 }).catch(() => null),
   ]);
 
-  let kbContext = [];
-  if (kbRaw) {
-    try {
-      const docs = JSON.parse(kbRaw);
-      kbContext = (Array.isArray(docs) ? docs : docs.results ?? [])
-        .map(d => d.title ? `${d.title}: ${(d.summary ?? d.description ?? '').substring(0, 100)}` : null)
-        .filter(Boolean);
-    } catch { /* leave empty */ }
-  }
+  // kb_search returns { docs: [{ name, summary, ... }], ... }
+  const kbContext = (kbRaw?.docs ?? [])
+    .map(d => d.name ? `${d.name}: ${(d.summary ?? '').substring(0, 100)}` : null)
+    .filter(Boolean);
 
-  let glossaryTerms = [];
-  if (glossaryRaw) {
-    try {
-      const terms = JSON.parse(glossaryRaw);
-      glossaryTerms = (Array.isArray(terms) ? terms : terms.results ?? [])
-        .flatMap(t => [t.term, ...(t.synonyms ?? [])].filter(Boolean));
-    } catch { /* leave empty */ }
-  }
+  // glossary_search returns { terms: [{ canonicalTerm, synonyms, ... }], ... }
+  const glossaryTerms = (glossaryRaw?.terms ?? [])
+    .flatMap(t => [t.canonicalTerm, ...(t.synonyms ?? [])].filter(Boolean));
 
   return { kbContext, glossaryTerms };
 }
