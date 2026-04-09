@@ -61,10 +61,11 @@ Forminator/
 ├── backend/
 │   ├── server.js
 │   └── routes/
-│       ├── chat.js       # Guided form-filling assistant (/api/chat)
-│       ├── chatEdit.js   # Schema edit assistant (/api/chat/edit)
-│       ├── azure.js      # Azure Blob Storage schema loader and saver
-│       └── data.js       # Form submission CRUD API
+│       ├── chat.js         # Guided form-filling assistant (/api/chat)
+│       ├── chatEdit.js     # Schema edit assistant (/api/chat/edit)
+│       ├── azure.js        # Azure Blob Storage schema loader and saver
+│       ├── data.js         # Form submission CRUD API
+│       └── schemaRouter.js # Natural language → schema routing agent (/api/schema-router)
 ├── frontend/
 │   └── src/
 │       ├── App.jsx
@@ -124,6 +125,44 @@ AZURE_ACCOUNT_KEY=...
 ```
 
 `AZURE_ACCOUNT_NAME` and `AZURE_ACCOUNT_KEY` are required — schemas are loaded exclusively from Azure Blob Storage. The schemas container is expected to contain paths of the form `{category}/{name}/schema.json`.
+
+## Schema Router
+
+The schema router is an AI agent that maps a natural language request to one or more Forminator schemas.
+
+**Endpoint:** `POST /api/schema-router`
+
+**Request:**
+```json
+{ "request": "I need to configure activity defaults for instructor led sessions" }
+```
+
+**Response:**
+```json
+{
+  "schemas": ["ilt_session_default", "activities"],
+  "reasoning": "The ilt_session_default schema handles the per-branch default session template for ILT sessions. The activities schema manages activity template configuration which applies to ILT activities."
+}
+```
+
+### How it works
+
+1. On each request the router reads all schemas from the `schemas/` directory and builds a catalog from their `title` and `description` fields
+2. The user's request and the catalog are sent to Claude (Haiku)
+3. Claude returns the names of the matching schema(s)
+4. The response is validated against the catalog — Claude cannot invent schema names
+
+### Adding new schemas
+
+Drop a new `.json` file into the `schemas/` directory. It will be automatically included in the router catalog on the next request — no configuration needed. The schema must have a `title` and ideally a `description` at the root level for the router to match against it accurately.
+
+### Example requests
+
+| Request | Matched schemas |
+|---|---|
+| "configure activity defaults for ILT" | `ilt_session_default`, `activities` |
+| "set the attendance code for our branch" | `ilt_session_default` |
+| "configure activity wizard steps and exclusions" | `activities` |
 
 ## Schema edit workflow
 
