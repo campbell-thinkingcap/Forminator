@@ -287,12 +287,9 @@ router.post('/intent', async (req, res) => {
   const { query } = req.body ?? {};
   if (!query) return res.status(400).json({ error: 'query is required' });
 
-  let catalog, skills;
+  let catalog;
   try {
-    [catalog, skills] = await Promise.all([
-      loadCatalog(),
-      fetchRelatedSkills(query),
-    ]);
+    catalog = await loadCatalog();
   } catch (err) {
     if (err.statusCode === 404) {
       return res.status(404).json({ error: 'Catalog not generated yet — POST /api/catalog/generate first.' });
@@ -361,7 +358,16 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
       } catch { /* fallback is best-effort */ }
     }
 
-    res.json({ query, matches, skills: skills.map(s => ({ name: s.name, category: s.category })) });
+    const matchesWithSkills = await Promise.all(
+      matches.map(async (match) => {
+        const entry = catalog.find(e => e.blobDir === match.blobDir);
+        const phrase = [entry?.entity, entry?.title].filter(Boolean).join(' ');
+        const matchSkills = phrase ? await fetchRelatedSkills(phrase) : [];
+        return { ...match, skills: matchSkills.map(s => ({ name: s.name, category: s.category })) };
+      })
+    );
+
+    res.json({ query, matches: matchesWithSkills });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
