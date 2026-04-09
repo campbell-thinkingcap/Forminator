@@ -1,6 +1,6 @@
-# Schema Finder
+# Skill Map
 
-Schema Finder lets you describe what you want to do in plain English and get back the
+Skill Map lets you describe what you want to do in plain English and get back the
 schemas that handle that action. It powers intent-based schema routing — useful for
 building assistants, onboarding flows, or any UI where users shouldn't need to know
 schema names up front.
@@ -112,7 +112,7 @@ relevance.
 
 ## Test UI
 
-A hidden test page is available at `/schema-finder`. It is not linked from the main
+A hidden test page is available at `/skill-map`. It is not linked from the main
 navigation — navigate to it directly.
 
 The page has:

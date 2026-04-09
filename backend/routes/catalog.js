@@ -297,7 +297,7 @@ router.post('/intent', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 
-  console.log(`[schema-finder] query="${query}" catalog=${catalog.length} entries`);
+  console.log(`[skill-map] query="${query}" catalog=${catalog.length} entries`);
 
   // Compact index — only routing-relevant fields
   const index = catalog.map(s => ({
@@ -333,7 +333,7 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
     const match = raw.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(match ? match[0] : raw);
     let matches = parsed.matches ?? [];
-    console.log(`[schema-finder] matches=${matches.length}${matches.length ? ': ' + matches.map(m => `"${m.title}" (${m.confidence})`).join(', ') : ''}`);
+    console.log(`[skill-map] matches=${matches.length}${matches.length ? ': ' + matches.map(m => `"${m.title}" (${m.confidence})`).join(', ') : ''}`);
 
     // Fallback: if all matches are low confidence and CapGPT is configured, search KB
     // and surface any catalog entries whose kbContext overlaps with the returned doc titles

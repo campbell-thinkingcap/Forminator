@@ -8,7 +8,7 @@ const CONFIDENCE_COLORS = {
   low:    { bg: 'rgba(148,163,184,0.15)', text: '#94a3b8', border: 'rgba(148,163,184,0.3)' },
 };
 
-export default function SchemaFinder() {
+export default function SkillMap() {
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -89,9 +89,9 @@ export default function SchemaFinder() {
       boxSizing: 'border-box',
     }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        <h1 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 700 }}>Schema Finder</h1>
+        <h1 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 700 }}>Skill Map</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-          Describe what you want to do and find the matching schema.
+          Describe what you want to do and find the matching skills and schemas.
         </p>
 
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
