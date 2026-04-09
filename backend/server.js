@@ -10,6 +10,7 @@ const chatRouter = require('./routes/chat');
 const chatEditRouter = require('./routes/chatEdit');
 const dbmetaRouter = require('./routes/dbmeta');
 const catalogRouter = require('./routes/catalog');
+const schemaRouterRouter = require('./routes/schemaRouter');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,6 +24,7 @@ app.use('/api/chat', chatRouter);
 app.use('/api/chat/edit', chatEditRouter);
 app.use('/api/dbmeta', dbmetaRouter);
 app.use('/api/catalog', catalogRouter);
+app.use('/api/schema-router', schemaRouterRouter);
 
 const SCHEMAS_DIR = path.join(__dirname, '../schemas');
 

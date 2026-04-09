@@ -1,0 +1,20 @@
+[
+  {
+    "skillName": "Activity Template Configuration",
+    "intent": "Configure default settings automatically applied when new learning activities are created, including wizard steps and excluded settings panels",
+    "keywords": ["activity", "activities", "template", "defaults", "presets", "wizard", "exclusions", "learning object"],
+    "schema": "activities"
+  },
+  {
+    "skillName": "Branch Settings",
+    "intent": "Configure branch-level settings covering general LMS configuration, enrollment options, notifications, branding, and administrative preferences",
+    "keywords": ["settings", "branch", "configuration", "general", "enrollment", "notifications", "branding", "admin"],
+    "schema": "settings"
+  },
+  {
+    "skillName": "ILT Session Default",
+    "intent": "Configure the default session template used when initialising new instructor-led training sessions, including attendance code and location type",
+    "keywords": ["ilt", "instructor led", "session", "default", "attendance", "attendance code", "location", "virtual", "room", "training"],
+    "schema": "ilt_session_default"
+  }
+]
