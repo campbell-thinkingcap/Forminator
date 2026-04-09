@@ -11,6 +11,7 @@ const CONFIDENCE_COLORS = {
 export default function SchemaFinder() {
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState(null);
+  const [skills, setSkills] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -41,6 +42,7 @@ export default function SchemaFinder() {
     setLoading(true);
     setError(null);
     setMatches(null);
+    setSkills(null);
     try {
       const res = await fetch(`${API_BASE}/catalog/intent`, {
         method: 'POST',
@@ -54,6 +56,7 @@ export default function SchemaFinder() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setMatches(data.matches ?? []);
+      setSkills(data.skills ?? []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -199,6 +202,36 @@ export default function SchemaFinder() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {skills && skills.length > 0 && (
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+              Related ThinkingCap Skills
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+              {skills.map((skill, i) => (
+                <span key={i} style={{
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '999px',
+                  fontSize: '0.78rem',
+                  background: 'var(--glass-bg)',
+                  border: '1px solid var(--glass-border)',
+                  color: 'var(--text-main)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}>
+                  {skill.name}
+                  {skill.category && (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+                      {skill.category}
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 

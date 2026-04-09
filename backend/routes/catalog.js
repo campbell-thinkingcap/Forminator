@@ -3,6 +3,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const express = require('express');
 const router = express.Router();
 const capgpt = require('../services/capgpt');
+const { fetchRelatedSkills } = require('../services/tapestry');
 
 const SCHEMAS_CONTAINER = 'schemas';
 const CATALOG_BLOB = 'schema-catalog.json';
@@ -286,9 +287,12 @@ router.post('/intent', async (req, res) => {
   const { query } = req.body ?? {};
   if (!query) return res.status(400).json({ error: 'query is required' });
 
-  let catalog;
+  let catalog, skills;
   try {
-    catalog = await loadCatalog();
+    [catalog, skills] = await Promise.all([
+      loadCatalog(),
+      fetchRelatedSkills(query),
+    ]);
   } catch (err) {
     if (err.statusCode === 404) {
       return res.status(404).json({ error: 'Catalog not generated yet — POST /api/catalog/generate first.' });
@@ -357,7 +361,7 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
       } catch { /* fallback is best-effort */ }
     }
 
-    res.json({ query, matches });
+    res.json({ query, matches, skills: skills.map(s => ({ name: s.name, category: s.category })) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
