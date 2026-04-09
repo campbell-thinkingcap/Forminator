@@ -18,21 +18,7 @@ function getPool() {
   return pool;
 }
 
-const STOP_WORDS = new Set([
-  'a','an','the','and','or','for','to','in','of','on','is','it','i','we',
-  'my','our','how','do','can','need','want','with','from','that','this',
-  'set','up','get','let','use','be','me','us','all','at','by',
-]);
-
-function extractTerms(request) {
-  return request
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
-}
-
-// Search ThinkingCap loom skills in Tapestry DB using ILIKE on key terms.
+// Search ThinkingCap loom skills in Tapestry DB using the full intent phrase.
 // Returns [{ name, category }] or [] if DB unavailable or no matches.
 async function fetchRelatedSkills(request) {
   const db = getPool();
@@ -41,16 +27,12 @@ async function fetchRelatedSkills(request) {
     return [];
   }
 
-  const terms = extractTerms(request);
-  console.log(`[tapestry] skill lookup terms: [${terms.join(', ')}]`);
-  if (terms.length === 0) return [];
+  const phrase = request.trim().toLowerCase();
+  console.log(`[tapestry] skill lookup phrase: "${phrase}"`);
+  if (!phrase) return [];
 
   try {
-    const conditions = terms.map((_, i) =>
-      `(content::jsonb->>'name' ILIKE $${i + 2} OR content::jsonb->>'category' ILIKE $${i + 2})`
-    ).join(' OR ');
-
-    const params = [TC_CONVERSATION_ID, ...terms.map(t => `%${t}%`)];
+    const params = [TC_CONVERSATION_ID, `%${phrase}%`];
 
     const { rows } = await db.query(`
       SELECT DISTINCT ON (
@@ -64,7 +46,7 @@ async function fetchRelatedSkills(request) {
       FROM conversation_messages
       WHERE conversation_id = $1
         AND metadata->>'fabric_type' = 'rsd'
-        AND (${conditions})
+        AND (content::jsonb->>'name' ILIKE $2 OR content::jsonb->>'category' ILIKE $2)
       ORDER BY
         COALESCE(
           (regexp_match(content, '"pairId"\\s*:\\s*"([^"]+)"'))[1],
