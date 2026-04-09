@@ -53,12 +53,23 @@ On each request the router:
 
 1. Reads all `.json` files from `schemas/` at runtime — no caching, always current
 2. Builds a catalog from each schema's `title` and first sentence of `description`
-3. Sends the catalog and the user's request to Claude Haiku
-4. Claude returns the names of matching schemas
-5. Results are validated — only names that exist in the catalog are returned
+3. Queries the Tapestry DB for loom skills matching key terms from the user's request (see below)
+4. Sends the catalog, the user's request, and any matched skills to Claude Haiku
+5. Claude returns the names of matching schemas; skills are used as context only — never returned
+6. Results are validated — only names that exist in the catalog are returned
+
+The response includes a `skillsUsed` boolean indicating whether any Tapestry skills were found and used as context.
+
+**Tapestry skill cross-reference:**
+
+The router performs an optional ILIKE search against the ThinkingCap LMS Legacy loom in the Tapestry Fabric database (`conversation_messages` where `metadata->>'fabric_type' = 'rsd'`). Key terms are extracted from the user's request (stop words removed, length > 2) and matched against each skill's `name` and `category` fields.
+
+This enriches routing for requests that use LMS feature vocabulary (e.g., "attendance code", "withdraw learners") — Claude can map that vocabulary to the correct settings schema even when the schema's `description` doesn't use the same words.
+
+The cross-reference is fully optional: if the `TAPESTRY_PG_*` environment variables are absent or the DB is unreachable, routing continues using the schema catalog alone.
 
 **Why schema-first, not loom-first:**
-Querying the Tapestry skill-map API requires session authentication (no service key currently available for backend-to-backend calls). More importantly, loom skills describe LMS features, not settings schemas — even with API access, the skill catalog would not provide useful routing signal for TCOV settings.
+Loom skills describe LMS features, not settings schemas — they cannot replace the schema catalog. The skill lookup is additive context only.
 
 ---
 
@@ -84,8 +95,10 @@ Querying the Tapestry skill-map API requires session authentication (no service 
 
 ---
 
-## Future: Connecting Schemas to Loom Skills
+## Schema-to-Skill Mapping (Future)
 
 If a loom skill in Tapestry is ever created that directly corresponds to a Forminator schema (e.g. a skill specifically for managing ILT session defaults), the mapping would be recorded here.
 
-To enable live skill-map querying from Forminator, the Tapestry backend would need to expose an endpoint authenticated via `X-Internal-Key` (the pattern already used in `tapestry-node/src/routes/tapestry.ts` for the `/api/tapestry/refresh` route). Forminator would then store the key in its `.env` as `TAPESTRY_INTERNAL_KEY`. This was deferred because it requires a small change to Tapestry.
+The current cross-reference approach is a best-effort ILIKE match — it surfaces related skills but does not guarantee a precise schema↔skill correspondence. A curated mapping table (added to this document) would let the router make authoritative connections rather than fuzzy ones.
+
+**Improving term coverage:** The stop-word list in `schemaRouter.js` (`STOP_WORDS` constant) can be extended to filter out domain noise. New skills added to the ThinkingCap loom are picked up automatically on the next request — no Forminator config change needed.
