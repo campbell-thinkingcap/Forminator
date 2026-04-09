@@ -361,8 +361,8 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
     const matchesWithSkills = await Promise.all(
       matches.map(async (match) => {
         const entry = catalog.find(e => e.blobDir === match.blobDir);
-        const phrase = [entry?.entity, entry?.title].filter(Boolean).join(' ');
-        const matchSkills = phrase ? await fetchRelatedSkills(phrase) : [];
+        const keywords = entry?.keywords ?? [];
+        const matchSkills = keywords.length > 0 ? await fetchRelatedSkills(keywords) : [];
         return { ...match, skills: matchSkills.map(s => ({ name: s.name, category: s.category })) };
       })
     );

@@ -18,40 +18,29 @@ function getPool() {
   return pool;
 }
 
-const STOP_WORDS = new Set([
-  'a','an','the','and','or','for','to','in','of','on','is','it','i','we',
-  'my','our','how','do','can','need','want','with','from','that','this',
-  'set','up','get','let','use','be','me','us','all','at','by',
-]);
-
-function extractTerms(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
-}
-
-// Search ThinkingCap loom skills in Tapestry DB.
-// Splits the phrase into meaningful terms and OR-matches against skill name/category.
+// Search ThinkingCap loom skills in Tapestry DB using keyword phrases.
+// phrases: string[] — each is matched as a full phrase against skill name/category.
 // Returns [{ name, category }] or [] if DB unavailable or no matches.
-async function fetchRelatedSkills(phrase) {
+async function fetchRelatedSkills(phrases) {
   const db = getPool();
   if (!db) {
     console.log('[tapestry] DB not configured — skipping skill lookup');
     return [];
   }
 
-  const terms = extractTerms(phrase);
-  console.log(`[tapestry] skill lookup for "${phrase}" → terms: [${terms.join(', ')}]`);
-  if (terms.length === 0) return [];
+  const cleaned = (Array.isArray(phrases) ? phrases : [phrases])
+    .map(p => p.trim().toLowerCase())
+    .filter(p => p.length > 1);
+
+  if (cleaned.length === 0) return [];
+  console.log(`[tapestry] skill lookup phrases: [${cleaned.join(', ')}]`);
 
   try {
-    const conditions = terms.map((_, i) =>
+    const conditions = cleaned.map((_, i) =>
       `(content::jsonb->>'name' ILIKE $${i + 2} OR content::jsonb->>'category' ILIKE $${i + 2})`
     ).join(' OR ');
 
-    const params = [TC_CONVERSATION_ID, ...terms.map(t => `%${t}%`)];
+    const params = [TC_CONVERSATION_ID, ...cleaned.map(p => `%${p}%`)];
 
     const { rows } = await db.query(`
       SELECT DISTINCT ON (
