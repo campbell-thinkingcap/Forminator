@@ -65,7 +65,8 @@ Forminator/
 │       ├── chatEdit.js     # Schema edit assistant (/api/chat/edit)
 │       ├── azure.js        # Azure Blob Storage schema loader and saver
 │       ├── data.js         # Form submission CRUD API
-│       └── schemaRouter.js # Natural language → schema routing agent (/api/schema-router)
+│       ├── schemaRouter.js # Natural language → schema routing agent (/api/schema-router)
+│       └── catalog.js      # Skill Map — intent → schemas + Tapestry skills (/api/catalog)
 ├── frontend/
 │   └── src/
 │       ├── App.jsx
@@ -77,7 +78,8 @@ Forminator/
 │           ├── EditPanel.jsx      # Schema edit chat UI
 │           ├── SchemaTree.jsx     # Azure schema browser sidebar
 │           ├── ApiDocs.jsx        # Auto-generated API docs view
-│           └── LoginPage.jsx      # Google OAuth login
+│           ├── LoginPage.jsx      # Google OAuth login
+│           └── SkillMap.jsx       # Skill Map page (/skill-map)
 └── schema_ai_concept.md  # Schema design guide loaded by the edit assistant
 ```
 
@@ -126,43 +128,49 @@ AZURE_ACCOUNT_KEY=...
 
 `AZURE_ACCOUNT_NAME` and `AZURE_ACCOUNT_KEY` are required — schemas are loaded exclusively from Azure Blob Storage. The schemas container is expected to contain paths of the form `{category}/{name}/schema.json`.
 
-## Schema Router
+## Skill Map
 
-The schema router is an AI agent that maps a natural language request to one or more Forminator schemas.
+Skill Map maps a natural-language intent to both **Tapestry LMS skills** and **TCOV schemas**. Navigate to `/skill-map` to use it.
 
-**Endpoint:** `POST /api/schema-router`
+**Endpoint:** `POST /api/catalog/intent`
 
 **Request:**
 ```json
-{ "request": "I need to configure activity defaults for instructor led sessions" }
+{ "query": "I want to add a user" }
 ```
 
 **Response:**
 ```json
 {
-  "schemas": ["ilt_session_default", "activities"],
-  "reasoning": "The ilt_session_default schema handles the per-branch default session template for ILT sessions. The activities schema manages activity template configuration which applies to ILT activities."
+  "query": "I want to add a user",
+  "matches": [
+    {
+      "blobDir": "users/manage-users/add-single-user",
+      "title": "Add Single User",
+      "confidence": "high",
+      "reason": "Directly matches the intent to add a single user account.",
+      "skills": [
+        { "name": "Add User to Branch", "category": "User Management", "confidence": "high" }
+      ]
+    }
+  ]
 }
 ```
 
 ### How it works
 
-1. On each request the router reads all schemas from the `schemas/` directory and builds a catalog from their `title` and `description` fields
-2. The user's request and the catalog are sent to Claude (Haiku)
-3. Claude returns the names of the matching schema(s)
-4. The response is validated against the catalog — Claude cannot invent schema names
+1. The enriched catalog (built via `POST /api/catalog/generate`) is loaded from Azure
+2. The query and catalog are sent to Claude Haiku, which returns up to 5 schema matches
+3. For each matched schema, its `keywords` are used to search the ThinkingCap LMS Legacy loom in Tapestry for related skills
+4. Skills are scored by keyword match quality and returned ranked — name matches score higher than category-only matches
 
-### Adding new schemas
+See [`docs/skill-map.md`](docs/skill-map.md) for full API reference and Tapestry configuration.
 
-Drop a new `.json` file into the `schemas/` directory. It will be automatically included in the router catalog on the next request — no configuration needed. The schema must have a `title` and ideally a `description` at the root level for the router to match against it accurately.
+### Schema Router (lightweight alternative)
 
-### Example requests
+For cases where only local `schemas/` files need to be matched (no Azure catalog required), the schema router provides a simpler alternative:
 
-| Request | Matched schemas |
-|---|---|
-| "configure activity defaults for ILT" | `ilt_session_default`, `activities` |
-| "set the attendance code for our branch" | `ilt_session_default` |
-| "configure activity wizard steps and exclusions" | `activities` |
+**Endpoint:** `POST /api/schema-router` — reads `schemas/` directory at runtime, no catalog needed.
 
 ## Schema edit workflow
 
