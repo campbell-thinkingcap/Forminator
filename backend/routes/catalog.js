@@ -282,6 +282,35 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// Score and rank skills by how well their name matches the schema's keywords.
+// Name matches score higher than category-only matches.
+// Skills with no name matches are filtered out.
+function scoreAndRankSkills(skills, keywords) {
+  if (skills.length === 0 || keywords.length === 0) return [];
+
+  const scored = skills.map(skill => {
+    const name = (skill.name ?? '').toLowerCase();
+    const category = (skill.category ?? '').toLowerCase();
+    let nameMatches = 0;
+    let categoryMatches = 0;
+
+    for (const kw of keywords) {
+      const kwLower = kw.toLowerCase();
+      if (name.includes(kwLower)) nameMatches++;
+      else if (category.includes(kwLower)) categoryMatches++;
+    }
+
+    // Name hits weighted 2x over category-only hits
+    const score = (nameMatches * 2 + categoryMatches) / (keywords.length * 2);
+    const confidence = nameMatches >= 2 ? 'high' : nameMatches >= 1 ? 'medium' : 'low';
+    return { name: skill.name, category: skill.category, score, confidence };
+  });
+
+  return scored
+    .filter(s => s.score > 0)            // drop category-only matches
+    .sort((a, b) => b.score - a.score);  // best matches first
+}
+
 // POST /api/catalog/intent — route a natural-language query to schemas
 router.post('/intent', async (req, res) => {
   const { query } = req.body ?? {};
@@ -362,8 +391,9 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
       matches.map(async (match) => {
         const entry = catalog.find(e => e.blobDir === match.blobDir);
         const keywords = entry?.keywords ?? [];
-        const matchSkills = keywords.length > 0 ? await fetchRelatedSkills(keywords) : [];
-        return { ...match, skills: matchSkills.map(s => ({ name: s.name, category: s.category })) };
+        const rawSkills = keywords.length > 0 ? await fetchRelatedSkills(keywords) : [];
+        const skills = scoreAndRankSkills(rawSkills, keywords);
+        return { ...match, skills };
       })
     );
 

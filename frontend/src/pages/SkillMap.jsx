@@ -182,24 +182,27 @@ export default function SkillMap() {
                       </div>
                       {match.skills && match.skills.length > 0 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.6rem' }}>
-                          {match.skills.map((skill, i) => (
-                            <span key={i} style={{
-                              padding: '0.2rem 0.55rem',
-                              borderRadius: '999px',
-                              fontSize: '0.72rem',
-                              background: 'var(--glass-bg)',
-                              border: '1px solid var(--glass-border)',
-                              color: 'var(--text-main)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                            }}>
-                              {skill.name}
-                              {skill.category && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>{skill.category}</span>
-                              )}
-                            </span>
-                          ))}
+                          {match.skills.map((skill, i) => {
+                            const skillConf = CONFIDENCE_COLORS[skill.confidence] ?? CONFIDENCE_COLORS.low;
+                            return (
+                              <span key={i} style={{
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: '999px',
+                                fontSize: '0.72rem',
+                                background: skillConf.bg,
+                                border: `1px solid ${skillConf.border}`,
+                                color: skillConf.text,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                              }}>
+                                {skill.name}
+                                {skill.category && (
+                                  <span style={{ opacity: 0.7, fontSize: '0.68rem' }}>{skill.category}</span>
+                                )}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
