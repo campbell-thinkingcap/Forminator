@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "settings-activities",
+    "$id": "settings",
     "title": "Settings > Activities",
     "description": "Branch-level activity template configuration. Single document per branch spanning three panels: Presets (default settings auto-applied to new learning activities), Wizard (steps shown in activity creation wizard), and Exclusions (settings hidden from activity editing UIs). Primary tables: ActivityTemplates, LearningObjectWizardSettings, LearningObjectHideSettings.",
     "type": "object",
