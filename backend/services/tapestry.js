@@ -18,21 +18,40 @@ function getPool() {
   return pool;
 }
 
-// Search ThinkingCap loom skills in Tapestry DB using the full intent phrase.
+const STOP_WORDS = new Set([
+  'a','an','the','and','or','for','to','in','of','on','is','it','i','we',
+  'my','our','how','do','can','need','want','with','from','that','this',
+  'set','up','get','let','use','be','me','us','all','at','by',
+]);
+
+function extractTerms(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+}
+
+// Search ThinkingCap loom skills in Tapestry DB.
+// Splits the phrase into meaningful terms and OR-matches against skill name/category.
 // Returns [{ name, category }] or [] if DB unavailable or no matches.
-async function fetchRelatedSkills(request) {
+async function fetchRelatedSkills(phrase) {
   const db = getPool();
   if (!db) {
     console.log('[tapestry] DB not configured — skipping skill lookup');
     return [];
   }
 
-  const phrase = request.trim().toLowerCase();
-  console.log(`[tapestry] skill lookup phrase: "${phrase}"`);
-  if (!phrase) return [];
+  const terms = extractTerms(phrase);
+  console.log(`[tapestry] skill lookup for "${phrase}" → terms: [${terms.join(', ')}]`);
+  if (terms.length === 0) return [];
 
   try {
-    const params = [TC_CONVERSATION_ID, `%${phrase}%`];
+    const conditions = terms.map((_, i) =>
+      `(content::jsonb->>'name' ILIKE $${i + 2} OR content::jsonb->>'category' ILIKE $${i + 2})`
+    ).join(' OR ');
+
+    const params = [TC_CONVERSATION_ID, ...terms.map(t => `%${t}%`)];
 
     const { rows } = await db.query(`
       SELECT DISTINCT ON (
@@ -46,7 +65,7 @@ async function fetchRelatedSkills(request) {
       FROM conversation_messages
       WHERE conversation_id = $1
         AND metadata->>'fabric_type' = 'rsd'
-        AND (content::jsonb->>'name' ILIKE $2 OR content::jsonb->>'category' ILIKE $2)
+        AND (${conditions})
       ORDER BY
         COALESCE(
           (regexp_match(content, '"pairId"\\s*:\\s*"([^"]+)"'))[1],
