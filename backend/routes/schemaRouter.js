@@ -177,11 +177,15 @@ Rules:
 
     const validSchemas = catalog.map(s => s.schema);
     const schemas = parsed.schemas.filter(s => validSchemas.includes(s));
+    const skills = relatedSkills.map(s => ({ name: s.name, category: s.category }));
+
+    console.log(`[schema-router] request="${request}" → schemas=[${schemas.join(', ')}]${skills.length ? ` skills=[${skills.map(s => s.name).join(', ')}]` : ''}`);
 
     res.json({
       schemas,
       reasoning: parsed.reasoning ?? '',
-      skillsUsed: relatedSkills.length > 0,
+      skillsUsed: skills.length > 0,
+      skills,
     });
   } catch (err) {
     console.error('Schema router error:', err.message);
