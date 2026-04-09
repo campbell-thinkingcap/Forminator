@@ -1,11 +1,31 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const express = require('express');
+const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SCHEMAS_DIR = path.join(__dirname, '../../schemas');
+
+// ThinkingCap LMS Legacy loom — Fabric conversation ID
+const TC_CONVERSATION_ID = 'c2c29ce1-2464-4c99-b56c-1312b16e792f';
+
+// Lazy-initialised pool — only created if Tapestry DB credentials are present
+let pool = null;
+function getPool() {
+  if (pool) return pool;
+  if (!process.env.TAPESTRY_PG_HOST || !process.env.TAPESTRY_PG_PASSWORD) return null;
+  pool = new Pool({
+    host:     process.env.TAPESTRY_PG_HOST,
+    port:     parseInt(process.env.TAPESTRY_PG_PORT || '5432', 10),
+    database: process.env.TAPESTRY_PG_DATABASE || 'tapestry',
+    user:     process.env.TAPESTRY_PG_USER     || 'tapestry',
+    password: process.env.TAPESTRY_PG_PASSWORD,
+    ssl:      { rejectUnauthorized: false },
+  });
+  return pool;
+}
 
 // Build catalog from schema files — title + description from each JSON Schema
 function buildCatalog() {
@@ -14,7 +34,7 @@ function buildCatalog() {
     try {
       const schema = JSON.parse(fs.readFileSync(path.join(SCHEMAS_DIR, file), 'utf8'));
       return {
-        schema: file.replace('.json', ''),
+        schema:      file.replace('.json', ''),
         title:       schema.title       ?? file.replace('.json', ''),
         description: schema.description ?? '',
       };
@@ -24,29 +44,100 @@ function buildCatalog() {
   }).filter(Boolean);
 }
 
+// Stop words to exclude from ILIKE term matching
+const STOP_WORDS = new Set([
+  'a','an','the','and','or','for','to','in','of','on','is','it','i','we',
+  'my','our','how','do','can','need','want','with','from','that','this',
+  'set','up','get','let','use','be','me','us','all','at','by',
+]);
+
+// Extract meaningful search terms from a natural language request
+function extractTerms(request) {
+  return request
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+}
+
+// Search ThinkingCap loom skills in Tapestry DB using ILIKE on key terms.
+// Returns [{ name, category }] or [] if DB unavailable or no matches.
+async function fetchRelatedSkills(request) {
+  const db = getPool();
+  if (!db) return [];
+
+  const terms = extractTerms(request);
+  if (terms.length === 0) return [];
+
+  try {
+    // Build OR conditions — match any term against name or category
+    const conditions = terms.map((_, i) =>
+      `(content::jsonb->>'name' ILIKE $${i + 2} OR content::jsonb->>'category' ILIKE $${i + 2})`
+    ).join(' OR ');
+
+    const params = [TC_CONVERSATION_ID, ...terms.map(t => `%${t}%`)];
+
+    const { rows } = await db.query(`
+      SELECT DISTINCT ON (
+        COALESCE(
+          (regexp_match(content, '"pairId"\\s*:\\s*"([^"]+)"'))[1],
+          id::text
+        )
+      )
+        content::jsonb->>'name'     AS name,
+        content::jsonb->>'category' AS category
+      FROM conversation_messages
+      WHERE conversation_id = $1
+        AND metadata->>'fabric_type' = 'rsd'
+        AND (${conditions})
+      ORDER BY
+        COALESCE(
+          (regexp_match(content, '"pairId"\\s*:\\s*"([^"]+)"'))[1],
+          id::text
+        ),
+        turn_index DESC
+      LIMIT 8
+    `, params);
+
+    return rows.filter(r => r.name);
+  } catch (err) {
+    console.warn('Schema router: skill DB query failed, proceeding without skills:', err.message);
+    return [];
+  }
+}
+
 // POST /api/schema-router
 // Body: { request: string }
-// Returns: { schemas: string[], reasoning: string }
+// Returns: { schemas: string[], reasoning: string, skillsUsed: boolean }
 router.post('/', async (req, res) => {
   const { request } = req.body;
   if (!request?.trim()) {
     return res.status(400).json({ error: 'request is required' });
   }
 
-  const catalog = buildCatalog();
+  const [catalog, relatedSkills] = await Promise.all([
+    Promise.resolve(buildCatalog()),
+    fetchRelatedSkills(request),
+  ]);
+
   if (catalog.length === 0) {
-    return res.json({ schemas: [], reasoning: 'No schemas found.' });
+    return res.json({ schemas: [], reasoning: 'No schemas found.', skillsUsed: false });
   }
 
   const catalogText = catalog.map((s, i) =>
     `${i + 1}. schema="${s.schema}" | title="${s.title}" | description="${s.description.split('.')[0]}"`
   ).join('\n');
 
+  const skillsText = relatedSkills.length > 0
+    ? `\nRELATED THINKINGCAP SKILLS (context only — do not return these names):\n` +
+      relatedSkills.map(s => `- "${s.name}"${s.intent ? ` — ${s.intent}` : ''}`).join('\n') + '\n'
+    : '';
+
   const prompt = `You are a schema routing agent. Given a user request, identify which schema(s) from the catalog below are needed to fulfil it. There may be one or more.
 
-CATALOG:
+SCHEMAS (return names from this list only):
 ${catalogText}
-
+${skillsText}
 USER REQUEST:
 ${request}
 
@@ -57,7 +148,8 @@ Respond with valid JSON only:
 }
 
 Rules:
-- Only return schema names exactly as listed in the catalog (the schema= value).
+- Only return schema names exactly as listed in the SCHEMAS catalog (the schema= value).
+- Use the related skills as context clues to understand what the user means, but never return a skill name.
 - Return an empty array if no schema is relevant.
 - Do not invent schema names.`;
 
@@ -83,11 +175,14 @@ Rules:
       return res.status(500).json({ error: 'Unexpected response from model', raw: rawText });
     }
 
-    // Filter to only valid schema names from the catalog
     const validSchemas = catalog.map(s => s.schema);
     const schemas = parsed.schemas.filter(s => validSchemas.includes(s));
 
-    res.json({ schemas, reasoning: parsed.reasoning ?? '' });
+    res.json({
+      schemas,
+      reasoning: parsed.reasoning ?? '',
+      skillsUsed: relatedSkills.length > 0,
+    });
   } catch (err) {
     console.error('Schema router error:', err.message);
     res.status(500).json({ error: 'Failed to route schema', details: err.message });
