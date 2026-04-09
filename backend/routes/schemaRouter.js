@@ -64,9 +64,13 @@ function extractTerms(request) {
 // Returns [{ name, category }] or [] if DB unavailable or no matches.
 async function fetchRelatedSkills(request) {
   const db = getPool();
-  if (!db) return [];
+  if (!db) {
+    console.log('[schema-router] Tapestry DB not configured — skipping skill lookup');
+    return [];
+  }
 
   const terms = extractTerms(request);
+  console.log(`[schema-router] skill lookup terms: [${terms.join(', ')}]`);
   if (terms.length === 0) return [];
 
   try {
@@ -99,9 +103,11 @@ async function fetchRelatedSkills(request) {
       LIMIT 8
     `, params);
 
-    return rows.filter(r => r.name);
+    const results = rows.filter(r => r.name);
+    console.log(`[schema-router] skill query returned ${results.length} match(es)${results.length ? ': ' + results.map(r => `"${r.name}"`).join(', ') : ''}`);
+    return results;
   } catch (err) {
-    console.warn('Schema router: skill DB query failed, proceeding without skills:', err.message);
+    console.warn('[schema-router] skill DB query failed, proceeding without skills:', err.message);
     return [];
   }
 }
