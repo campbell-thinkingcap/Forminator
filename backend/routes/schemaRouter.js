@@ -1,81 +1,27 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const express = require('express');
-const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
-const skillSchemaMap = require('../data/skill-schema-map.json');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const SCHEMAS_DIR = path.join(__dirname, '../../schemas');
 
-// ThinkingCap LMS Legacy loom — conversation_id is the Fabric ID
-const TC_CONVERSATION_ID = 'c2c29ce1-2464-4c99-b56c-1312b16e792f';
-
-// Lazy-initialised pool — only created if Tapestry DB credentials are present
-let pool = null;
-function getPool() {
-  if (pool) return pool;
-  if (!process.env.TAPESTRY_PG_HOST || !process.env.TAPESTRY_PG_PASSWORD) return null;
-  pool = new Pool({
-    host:     process.env.TAPESTRY_PG_HOST,
-    port:     parseInt(process.env.TAPESTRY_PG_PORT || '5432', 10),
-    database: process.env.TAPESTRY_PG_DATABASE || 'tapestry',
-    user:     process.env.TAPESTRY_PG_USER     || 'tapestry',
-    password: process.env.TAPESTRY_PG_PASSWORD,
-    ssl:      { rejectUnauthorized: false },
-  });
-  return pool;
-}
-
-// Fetch latest revision of each skill from Tapestry DB.
-// Returns [{ name, intent, keywords }] or null if DB not available.
-async function fetchSkillsFromDb() {
-  const db = getPool();
-  if (!db) return null;
-
-  const { rows } = await db.query(`
-    SELECT DISTINCT ON (
-      COALESCE(
-        (regexp_match(content, '"pairId"\\s*:\\s*"([^"]+)"'))[1],
-        id::text
-      )
-    )
-    content::text AS content
-    FROM conversation_messages
-    WHERE conversation_id = $1
-      AND metadata->>'fabric_type' = 'rsd'
-    ORDER BY
-      COALESCE(
-        (regexp_match(content, '"pairId"\\s*:\\s*"([^"]+)"'))[1],
-        id::text
-      ),
-      turn_index DESC
-  `, [TC_CONVERSATION_ID]);
-
-  return rows.map(row => {
+// Build catalog from schema files — title + description from each JSON Schema
+function buildCatalog() {
+  const files = fs.readdirSync(SCHEMAS_DIR).filter(f => f.endsWith('.json'));
+  return files.map(file => {
     try {
-      const rsd = JSON.parse(row.content);
+      const schema = JSON.parse(fs.readFileSync(path.join(SCHEMAS_DIR, file), 'utf8'));
       return {
-        name:     rsd.name     ?? '',
-        intent:   rsd.intent   ?? rsd.description ?? '',
-        keywords: Array.isArray(rsd.keywords) ? rsd.keywords : [],
+        schema: file.replace('.json', ''),
+        title:       schema.title       ?? file.replace('.json', ''),
+        description: schema.description ?? '',
       };
     } catch {
       return null;
     }
   }).filter(Boolean);
-}
-
-// Static fallback catalog derived from skill-schema-map keys
-function staticCatalog() {
-  return Object.keys(skillSchemaMap).map(name => ({ name, intent: '', keywords: [] }));
-}
-
-function buildCatalog(skills) {
-  return skills.map((s, i) => {
-    const parts = [`${i + 1}. name="${s.name}"`];
-    if (s.intent)            parts.push(`intent="${s.intent}"`);
-    if (s.keywords?.length)  parts.push(`keywords=[${s.keywords.join(', ')}]`);
-    return parts.join(' | ');
-  }).join('\n');
 }
 
 // POST /api/schema-router
@@ -87,42 +33,33 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'request is required' });
   }
 
-  let skills;
-  let source = 'db';
-  try {
-    skills = await fetchSkillsFromDb();
-  } catch (err) {
-    console.warn('Schema router: DB fetch failed, falling back to static map:', err.message);
-    skills = null;
+  const catalog = buildCatalog();
+  if (catalog.length === 0) {
+    return res.json({ schemas: [], reasoning: 'No schemas found.' });
   }
 
-  if (!skills) {
-    skills = staticCatalog();
-    source = 'static';
-  }
-
-  if (skills.length === 0) {
-    return res.json({ schemas: [], reasoning: 'No skills found in catalog.', source });
-  }
+  const catalogText = catalog.map((s, i) =>
+    `${i + 1}. schema="${s.schema}" | title="${s.title}" | description="${s.description.split('.')[0]}"`
+  ).join('\n');
 
   const prompt = `You are a schema routing agent. Given a user request, identify which schema(s) from the catalog below are needed to fulfil it. There may be one or more.
 
 CATALOG:
-${buildCatalog(skills)}
+${catalogText}
 
 USER REQUEST:
 ${request}
 
 Respond with valid JSON only:
 {
-  "skillNames": ["Exact Skill Name 1", "Exact Skill Name 2"],
-  "reasoning": "brief explanation of why these skills were selected"
+  "schemas": ["schema_name_1", "schema_name_2"],
+  "reasoning": "brief explanation of why these schemas were selected"
 }
 
 Rules:
-- Only return skill names that appear exactly as listed in the catalog.
-- Return an empty array if no skill is relevant.
-- Do not invent skill names.`;
+- Only return schema names exactly as listed in the catalog (the schema= value).
+- Return an empty array if no schema is relevant.
+- Do not invent schema names.`;
 
   try {
     const response = await client.messages.create({
@@ -142,16 +79,15 @@ Rules:
       parsed = objMatch ? JSON.parse(objMatch[0]) : null;
     }
 
-    if (!parsed || !Array.isArray(parsed.skillNames)) {
+    if (!parsed || !Array.isArray(parsed.schemas)) {
       return res.status(500).json({ error: 'Unexpected response from model', raw: rawText });
     }
 
-    // Translate skill names → schema names via lookup table
-    const schemas = parsed.skillNames
-      .map(name => skillSchemaMap[name])
-      .filter(Boolean);
+    // Filter to only valid schema names from the catalog
+    const validSchemas = catalog.map(s => s.schema);
+    const schemas = parsed.schemas.filter(s => validSchemas.includes(s));
 
-    res.json({ schemas, reasoning: parsed.reasoning ?? '', source });
+    res.json({ schemas, reasoning: parsed.reasoning ?? '' });
   } catch (err) {
     console.error('Schema router error:', err.message);
     res.status(500).json({ error: 'Failed to route schema', details: err.message });
