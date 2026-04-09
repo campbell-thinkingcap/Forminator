@@ -88,6 +88,11 @@ Pause and ask if:
 - you are choosing between tradeoffs the user should approve
 Do not fabricate certainty to stay moving.
 
+## Agent Usage
+
+- After writing or modifying any frontend component, invoke the `ux-reviewer` agent
+- Before committing any backend route or auth-related code, invoke the `security-auditor` agent
+
 ## 9. Final Check Before You Finish
 Before considering the task complete, confirm:
 - the request was actually addressed
