@@ -403,4 +403,20 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
   }
 });
 
+// POST /api/catalog/skill-detail — fetch KB article(s) for a skill name via CapGPT
+router.post('/skill-detail', async (req, res) => {
+  const { name } = req.body ?? {};
+  if (!name) return res.status(400).json({ error: 'name is required' });
+  try {
+    const raw = await capgpt.callTool('kb_search', { query: name, limit: 2 });
+    const docs = (raw?.docs ?? [])
+      .map(d => ({ title: d.name ?? null, summary: d.summary ?? null }))
+      .filter(d => d.title);
+    res.json({ docs });
+  } catch (err) {
+    console.error('[skill-detail] kb_search failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

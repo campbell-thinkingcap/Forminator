@@ -14,11 +14,34 @@ export default function SkillMap() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
+  const [skillDetail, setSkillDetail] = useState(null); // null | { loading } | { docs, error }
   const [generating, setGenerating] = useState(false);
   const [generateResult, setGenerateResult] = useState(null);
   const [catalogStatus, setCatalogStatus] = useState(null); // { exists, lastGenerated }
   const [catalogPreview, setCatalogPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  const selectSkill = async (skill) => {
+    if (selectedSkill?.name === skill.name) {
+      setSelectedSkill(null);
+      setSkillDetail(null);
+      return;
+    }
+    setSelectedSkill(skill);
+    setSkillDetail({ loading: true });
+    try {
+      const res = await fetch(`${API_BASE}/catalog/skill-detail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: skill.name }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setSkillDetail({ loading: false, docs: data.docs ?? [], error: null });
+    } catch (err) {
+      setSkillDetail({ loading: false, docs: [], error: err.message });
+    }
+  };
 
   // Apply saved theme
   useEffect(() => {
@@ -43,6 +66,7 @@ export default function SkillMap() {
     setError(null);
     setMatches(null);
     setSelectedSkill(null);
+    setSkillDetail(null);
     try {
       const res = await fetch(`${API_BASE}/catalog/intent`, {
         method: 'POST',
@@ -192,7 +216,7 @@ export default function SkillMap() {
                               return (
                                 <span
                                   key={i}
-                                  onClick={() => setSelectedSkill(isSelected ? null : skill)}
+                                  onClick={() => selectSkill(skill)}
                                   style={{
                                     padding: '0.2rem 0.55rem',
                                     borderRadius: '999px',
@@ -256,7 +280,7 @@ export default function SkillMap() {
                     {selectedSkill.name}
                   </div>
                   <button
-                    onClick={() => setSelectedSkill(null)}
+                    onClick={() => { setSelectedSkill(null); setSkillDetail(null); }}
                     style={{
                       flexShrink: 0,
                       background: 'none',
@@ -289,9 +313,32 @@ export default function SkillMap() {
                     </span>
                   );
                 })()}
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  {selectedSkill.description ?? selectedSkill.intent ?? (
-                    <span style={{ fontStyle: 'italic' }}>No description available.</span>
+                <div style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
+                  {!skillDetail || skillDetail.loading ? (
+                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      Looking up in knowledge base…
+                    </span>
+                  ) : skillDetail.error ? (
+                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      Could not load description.
+                    </span>
+                  ) : skillDetail.docs.length === 0 ? (
+                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      No knowledge base article found.
+                    </span>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {skillDetail.docs.map((doc, i) => (
+                        <div key={i}>
+                          <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                            {doc.title}
+                          </div>
+                          {doc.summary && (
+                            <div style={{ color: 'var(--text-muted)' }}>{doc.summary}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
