@@ -218,7 +218,7 @@ export default function SkillMap() {
       boxSizing: 'border-box',
     }}>
       <div style={{
-        maxWidth: selectedSkill ? 1100 : 720,
+        maxWidth: (selectedSkill || schemas.length > 0) ? 1100 : 720,
         margin: '0 auto',
         transition: 'max-width 0.2s ease',
         display: 'flex',
@@ -243,29 +243,28 @@ export default function SkillMap() {
                 const isLoading = msg.loading;
                 const showSchemas = !isUser && isLastAssistant(i) && !isLoading && schemas.length > 0;
                 return (
-                  <div key={i}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
                     {/* Bubble */}
-                    <div style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
-                      <div style={{
-                        maxWidth: '80%',
-                        padding: '0.65rem 1rem',
-                        borderRadius: isUser ? '1.2rem 1.2rem 0.25rem 1.2rem' : '1.2rem 1.2rem 1.2rem 0.25rem',
-                        background: isUser ? 'var(--primary)' : 'var(--glass-bg)',
-                        border: isUser ? 'none' : '1px solid var(--glass-border)',
-                        color: isUser ? '#fff' : 'var(--text-main)',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.55,
-                        backdropFilter: isUser ? undefined : 'var(--card-backdrop)',
-                        fontStyle: isLoading ? 'italic' : undefined,
-                        opacity: isLoading ? 0.6 : 1,
-                      }}>
-                        {msg.content}
-                      </div>
+                    <div style={{
+                      maxWidth: showSchemas ? '42%' : '80%',
+                      flexShrink: 0,
+                      padding: '0.65rem 1rem',
+                      borderRadius: isUser ? '1.2rem 1.2rem 0.25rem 1.2rem' : '1.2rem 1.2rem 1.2rem 0.25rem',
+                      background: isUser ? 'var(--primary)' : 'var(--glass-bg)',
+                      border: isUser ? 'none' : '1px solid var(--glass-border)',
+                      color: isUser ? '#fff' : 'var(--text-main)',
+                      fontSize: '0.9rem',
+                      lineHeight: 1.55,
+                      backdropFilter: isUser ? undefined : 'var(--card-backdrop)',
+                      fontStyle: isLoading ? 'italic' : undefined,
+                      opacity: isLoading ? 0.6 : 1,
+                    }}>
+                      {msg.content}
                     </div>
 
-                    {/* Schema cards below last assistant message */}
+                    {/* Schema cards to the right of the last assistant message */}
                     {showSchemas && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
                         {schemas.map((match) => (
                           <SchemaCard key={match.blobDir} match={match} />
                         ))}
