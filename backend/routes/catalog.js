@@ -407,7 +407,7 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
 // Body: { messages: [{role, content}] }
 // Returns: { message, schemas }
 router.post('/chat', async (req, res) => {
-  const { messages = [] } = req.body ?? {};
+  const { messages = [], lockedSchemas } = req.body ?? {};
 
   // Turn 0: no messages yet — return the opening greeting with no LLM call
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
@@ -426,7 +426,12 @@ router.post('/chat', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 
-  // --- Step 1: Route the last user message to matching schemas (same logic as /intent) ---
+  // --- Step 1: Route the last user message to matching schemas (skipped if schemas already locked) ---
+  if (lockedSchemas) {
+    // Schemas already identified — skip routing, use provided set
+    console.log(`[skill-chat] schemas locked (${lockedSchemas.length}), skipping routing`);
+  }
+
   const query = lastUser.content;
   const index = catalog.map(s => ({
     blobDir: s.blobDir,
@@ -450,30 +455,32 @@ Return a JSON object: { "matches": [...] }
 Each match: { "blobDir": "...", "title": "...", "confidence": "high"|"medium"|"low", "reason": "one sentence" }
 Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
 
-  let matchesWithSkills = [];
-  try {
-    const routingRes = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: routingPrompt }],
-    });
-    const raw = routingRes.content[0].text.trim();
-    const objMatch = raw.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(objMatch ? objMatch[0] : raw);
-    const matches = parsed.matches ?? [];
+  let matchesWithSkills = lockedSchemas ?? [];
+  if (!lockedSchemas) {
+    try {
+      const routingRes = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: routingPrompt }],
+      });
+      const raw = routingRes.content[0].text.trim();
+      const objMatch = raw.match(/\{[\s\S]*\}/);
+      const parsed = JSON.parse(objMatch ? objMatch[0] : raw);
+      const matches = parsed.matches ?? [];
 
-    matchesWithSkills = await Promise.all(
-      matches.map(async (m) => {
-        const entry = catalog.find(e => e.blobDir === m.blobDir);
-        const keywords = entry?.keywords ?? [];
-        const rawSkills = keywords.length > 0 ? await fetchRelatedSkills(keywords) : [];
-        const skills = scoreAndRankSkills(rawSkills, keywords);
-        return { ...m, skills };
-      })
-    );
-    console.log(`[skill-chat] query="${query}" → ${matchesWithSkills.length} schema(s)`);
-  } catch (err) {
-    console.warn('[skill-chat] routing failed, continuing with empty schemas:', err.message);
+      matchesWithSkills = await Promise.all(
+        matches.map(async (m) => {
+          const entry = catalog.find(e => e.blobDir === m.blobDir);
+          const keywords = entry?.keywords ?? [];
+          const rawSkills = keywords.length > 0 ? await fetchRelatedSkills(keywords) : [];
+          const skills = scoreAndRankSkills(rawSkills, keywords);
+          return { ...m, skills };
+        })
+      );
+      console.log(`[skill-chat] query="${query}" → ${matchesWithSkills.length} schema(s)`);
+    } catch (err) {
+      console.warn('[skill-chat] routing failed, continuing with empty schemas:', err.message);
+    }
   }
 
   // --- Step 2: Generate a conversational reply using history + schema results ---

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Send, User } from 'lucide-react';
+import { Bot, RotateCcw, Send, User } from 'lucide-react';
 import DynamicForm from '../components/DynamicForm';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
@@ -190,7 +190,10 @@ export default function SkillMap() {
       const res = await fetch(`${API_BASE}/catalog/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({
+          messages: nextMessages,
+          ...(schemas.length > 0 ? { lockedSchemas: schemas } : {}),
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -206,6 +209,20 @@ export default function SkillMap() {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
+  };
+
+  const handleNewChat = () => {
+    setMessages([{ role: 'assistant', content: 'What would you like to do today?' }]);
+    setSchemas([]);
+    setPhase('discovery');
+    setSelectedSchema(null);
+    setFormData({});
+    setCollectingMessages([]);
+    setEnumOptions(null);
+    setSelectedSkill(null);
+    setSkillDetail(null);
+    setInput('');
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const handleGenerate = async () => {
@@ -342,6 +359,27 @@ export default function SkillMap() {
 
           {/* Chat column */}
           <div className="chat-panel" style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.5rem 1rem 0',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {phase === 'collecting' ? selectedSchema?.title
+                  : phase === 'complete' ? 'Complete'
+                  : null}
+              </span>
+              <button
+                onClick={handleNewChat}
+                className="chat-send-btn"
+                title="New chat"
+                style={{ padding: '0.3rem' }}
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
             <div className="chat-messages">
               {messages.map((msg, i) => (
                 <div key={i} className={`chat-message chat-message--${msg.role}`}>
