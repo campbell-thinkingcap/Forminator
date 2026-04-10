@@ -514,6 +514,20 @@ If no schemas matched, ask a clarifying question to better understand what the u
   }
 });
 
+// GET /api/catalog/schema?blobDir=... — fetch full JSON schema from Azure by blobDir
+router.get('/schema', async (req, res) => {
+  const { blobDir } = req.query;
+  if (!blobDir) return res.status(400).json({ error: 'blobDir is required' });
+  try {
+    const container = getContainerClient();
+    const buffer = await container.getBlobClient(`${blobDir}/schema.json`).downloadToBuffer();
+    res.json(JSON.parse(buffer.toString('utf8')));
+  } catch (err) {
+    if (err.statusCode === 404) return res.status(404).json({ error: 'Schema not found' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/catalog/skill-detail — fetch KB article(s) for a skill name via CapGPT
 router.post('/skill-detail', async (req, res) => {
   const { name } = req.body ?? {};

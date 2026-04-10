@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Send, User } from 'lucide-react';
+import DynamicForm from '../components/DynamicForm';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
@@ -8,6 +9,18 @@ const CONFIDENCE_COLORS = {
   medium: { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b', border: 'rgba(245,158,11,0.3)' },
   low:    { bg: 'rgba(148,163,184,0.15)', text: '#94a3b8', border: 'rgba(148,163,184,0.3)' },
 };
+
+function deepMerge(target, source) {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepMerge(result[key] ?? {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
 
 export default function SkillMap() {
   const [messages, setMessages] = useState([
@@ -24,6 +37,11 @@ export default function SkillMap() {
   const [catalogPreview, setCatalogPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [catalogError, setCatalogError] = useState(null);
+  const [phase, setPhase]                           = useState('discovery');
+  const [selectedSchema, setSelectedSchema]         = useState(null);
+  const [formData, setFormData]                     = useState({});
+  const [collectingMessages, setCollectingMessages] = useState([]);
+  const [enumOptions, setEnumOptions]               = useState(null);
 
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -71,10 +89,95 @@ export default function SkillMap() {
     }
   };
 
+  const handleSchemaSelect = async (match) => {
+    if (phase !== 'discovery' || loading) return;
+    setLoading(true);
+    try {
+      const schemaRes = await fetch(`${API_BASE}/catalog/schema?blobDir=${encodeURIComponent(match.blobDir)}`);
+      if (!schemaRes.ok) throw new Error(`HTTP ${schemaRes.status}`);
+      const schema = await schemaRes.json();
+
+      const transitionMsg = {
+        role: 'assistant',
+        content: `Great, let's collect the information needed for **${match.title}**. I'll guide you through each field.`,
+      };
+      setSelectedSchema(schema);
+      setPhase('collecting');
+      setFormData({});
+      setEnumOptions(null);
+      setCollectingMessages([]);
+
+      const messagesWithTransition = [...messages, transitionMsg];
+      setMessages(messagesWithTransition);
+
+      // Get first field question
+      const chatRes = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schema, messages: [], currentFormData: {} }),
+      });
+      if (!chatRes.ok) throw new Error(`HTTP ${chatRes.status}`);
+      const data = await chatRes.json();
+
+      const assistantMsg = { role: 'assistant', content: data.message };
+      setMessages([...messagesWithTransition, assistantMsg]);
+      setCollectingMessages([assistantMsg]);
+      if (data.fieldUpdates) setFormData(prev => deepMerge(prev, data.fieldUpdates));
+      setEnumOptions(data.enumOptions ? { options: data.enumOptions, multiSelect: data.multiSelect ?? false } : null);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, couldn't load that schema: ${err.message}` }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendMessage = async (text) => {
+    if (loading) return;
+    const userMsg = { role: 'user', content: text };
+    const nextMessages = [...messages, userMsg];
+    const nextCollecting = [...collectingMessages, userMsg];
+    setMessages(nextMessages);
+    setCollectingMessages(nextCollecting);
+    setEnumOptions(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schema: selectedSchema, messages: nextCollecting, currentFormData: formData }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const assistantMsg = { role: 'assistant', content: data.message };
+      setMessages([...nextMessages, assistantMsg]);
+      setCollectingMessages([...nextCollecting, assistantMsg]);
+      if (data.fieldUpdates) setFormData(prev => deepMerge(prev, data.fieldUpdates));
+      setEnumOptions(data.enumOptions ? { options: data.enumOptions, multiSelect: data.multiSelect ?? false } : null);
+      if (data.message.includes('All done') || data.message.includes('form is complete')) {
+        setPhase('complete');
+      }
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, something went wrong: ${err.message}` }]);
+    } finally {
+      setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  };
+
   const handleSend = async (e) => {
     e?.preventDefault();
     if (!input.trim() || loading) return;
 
+    if (phase === 'collecting') {
+      const text = input.trim();
+      setInput('');
+      await sendMessage(text);
+      return;
+    }
+
+    // discovery phase
     const userMessage = { role: 'user', content: input.trim() };
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
@@ -125,14 +228,19 @@ export default function SkillMap() {
   // Schema card — used inside the chat bubble area
   const SchemaCard = ({ match }) => {
     const conf = CONFIDENCE_COLORS[match.confidence] ?? CONFIDENCE_COLORS.low;
+    const isClickable = phase === 'discovery';
     return (
-      <div style={{
-        background: 'var(--glass-bg)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: 'var(--radius-card)',
-        padding: '0.75rem 1rem',
-        backdropFilter: 'var(--card-backdrop)',
-      }}>
+      <div
+        onClick={isClickable ? () => handleSchemaSelect(match) : undefined}
+        style={{
+          background: 'var(--glass-bg)',
+          border: '1px solid var(--glass-border)',
+          borderRadius: 'var(--radius-card)',
+          padding: '0.75rem 1rem',
+          backdropFilter: 'var(--card-backdrop)',
+          cursor: isClickable ? 'pointer' : 'default',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.15rem' }}>
@@ -215,7 +323,7 @@ export default function SkillMap() {
       flexDirection: 'column',
     }}>
       <div style={{
-        maxWidth: (selectedSkill || schemas.length > 0) ? 1100 : 720,
+        maxWidth: (selectedSkill || schemas.length > 0 || phase !== 'discovery') ? 1100 : 720,
         margin: '0 auto',
         width: '100%',
         transition: 'max-width 0.2s ease',
@@ -253,6 +361,15 @@ export default function SkillMap() {
                   </div>
                 </div>
               )}
+              {phase === 'collecting' && enumOptions && !loading && (
+                <div className="chat-enum-options">
+                  {enumOptions.options.map((opt, i) => (
+                    <button key={i} className="chat-enum-option" onClick={() => sendMessage(opt)}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div ref={chatEndRef} />
             </div>
             <div className="chat-input-row">
@@ -263,13 +380,13 @@ export default function SkillMap() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
                 placeholder="Type a message…"
-                disabled={loading}
+                disabled={loading || phase === 'complete' || (phase === 'collecting' && !!enumOptions)}
                 autoFocus
                 className="chat-input"
               />
               <button
                 onClick={handleSend}
-                disabled={loading || !input.trim()}
+                disabled={loading || !input.trim() || phase === 'complete' || (phase === 'collecting' && !!enumOptions)}
                 className="chat-send-btn"
                 title="Send"
               >
@@ -278,8 +395,8 @@ export default function SkillMap() {
             </div>
           </div>
 
-          {/* Right panel — schemas list, or skill detail when a pill is clicked */}
-          {(schemas.length > 0 || selectedSkill) && (
+          {/* Right panel — DynamicForm (collecting/complete) or schemas/skill-detail (discovery) */}
+          {(phase !== 'discovery' || schemas.length > 0 || selectedSkill) && (
             <div style={{
               width: 320,
               flexShrink: 0,
@@ -289,7 +406,26 @@ export default function SkillMap() {
               overflowY: 'auto',
               height: '100%',
             }}>
-              {selectedSkill ? (
+              {phase !== 'discovery' ? (
+                /* Form-filling: live form preview */
+                <div style={{
+                  background: 'var(--glass-bg)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-card)',
+                  padding: '1rem 1.25rem',
+                  backdropFilter: 'var(--card-backdrop)',
+                }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.75rem' }}>
+                    {selectedSchema?.title ?? 'Form'}
+                  </div>
+                  <DynamicForm schema={selectedSchema} data={formData} onChange={() => {}} />
+                  {phase === 'complete' && (
+                    <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#10b981', fontWeight: 500 }}>
+                      Form complete
+                    </div>
+                  )}
+                </div>
+              ) : selectedSkill ? (
                 /* Skill detail */
                 <div style={{
                   background: 'var(--glass-bg)',
