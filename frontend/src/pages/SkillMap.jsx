@@ -232,10 +232,16 @@ export default function SkillMap() {
         setCollectingMessages([firstQuestion]);
         if (chatData.fieldUpdates) setFormData(prev => deepMerge(prev, chatData.fieldUpdates));
         setEnumOptions(chatData.enumOptions ? { options: chatData.enumOptions, multiSelect: chatData.multiSelect ?? false } : null);
+      } else if ((data.schemas ?? []).length > 0) {
+        // Ambiguous: 2+ high-confidence schemas — show cards, ask which applies
+        setMessages([...nextMessages, {
+          role: 'assistant',
+          content: "I found a few options — which one fits what you're trying to do?",
+        }]);
+        setSchemas(data.schemas);
       } else {
-        // Multiple matches or no match — show schemas in panel for user to pick
+        // No schemas matched — AI asks a clarifying question
         setMessages([...nextMessages, { role: 'assistant', content: data.message }]);
-        setSchemas(data.schemas ?? []);
       }
     } catch (err) {
       setMessages([...nextMessages, { role: 'assistant', content: `Sorry, something went wrong: ${err.message}` }]);
