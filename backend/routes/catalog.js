@@ -403,6 +403,117 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
   }
 });
 
+// POST /api/catalog/chat — conversational assistant that routes to schemas and responds naturally
+// Body: { messages: [{role, content}] }
+// Returns: { message, schemas }
+router.post('/chat', async (req, res) => {
+  const { messages = [] } = req.body ?? {};
+
+  // Turn 0: no messages yet — return the opening greeting with no LLM call
+  const lastUser = [...messages].reverse().find(m => m.role === 'user');
+  if (!lastUser) {
+    return res.json({ message: 'What would you like to do today?', schemas: [] });
+  }
+
+  // Load catalog
+  let catalog;
+  try {
+    catalog = await loadCatalog();
+  } catch (err) {
+    if (err.statusCode === 404) {
+      return res.status(404).json({ error: 'Catalog not generated yet — POST /api/catalog/generate first.' });
+    }
+    return res.status(500).json({ error: err.message });
+  }
+
+  // --- Step 1: Route the last user message to matching schemas (same logic as /intent) ---
+  const query = lastUser.content;
+  const index = catalog.map(s => ({
+    blobDir: s.blobDir,
+    title: s.title,
+    entity: s.entity,
+    actions: s.actions,
+    keywords: s.keywords,
+    intentExamples: s.intentExamples,
+    kbContext: s.kbContext ?? [],
+    glossaryTerms: s.glossaryTerms ?? [],
+  }));
+
+  const routingPrompt = `You are a schema router. Given a user's natural-language query, return the most relevant schemas from the catalog.
+
+User query: "${query}"
+
+Catalog (${index.length} schemas):
+${JSON.stringify(index)}
+
+Return a JSON object: { "matches": [...] }
+Each match: { "blobDir": "...", "title": "...", "confidence": "high"|"medium"|"low", "reason": "one sentence" }
+Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
+
+  let matchesWithSkills = [];
+  try {
+    const routingRes = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: routingPrompt }],
+    });
+    const raw = routingRes.content[0].text.trim();
+    const objMatch = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(objMatch ? objMatch[0] : raw);
+    const matches = parsed.matches ?? [];
+
+    matchesWithSkills = await Promise.all(
+      matches.map(async (m) => {
+        const entry = catalog.find(e => e.blobDir === m.blobDir);
+        const keywords = entry?.keywords ?? [];
+        const rawSkills = keywords.length > 0 ? await fetchRelatedSkills(keywords) : [];
+        const skills = scoreAndRankSkills(rawSkills, keywords);
+        return { ...m, skills };
+      })
+    );
+    console.log(`[skill-chat] query="${query}" → ${matchesWithSkills.length} schema(s)`);
+  } catch (err) {
+    console.warn('[skill-chat] routing failed, continuing with empty schemas:', err.message);
+  }
+
+  // --- Step 2: Generate a conversational reply using history + schema results ---
+  const schemasContext = matchesWithSkills.length > 0
+    ? `\nSchemas matched for the user's latest message:\n` +
+      matchesWithSkills.map(m => `- "${m.title}" (${m.confidence}): ${m.reason}`).join('\n')
+    : '\nNo schemas were matched for the user\'s latest message.';
+
+  const systemPrompt = `You are a friendly assistant helping users navigate ThinkingCap LMS configuration schemas.
+Schemas matching the user's intent have already been found for you.
+Your job: acknowledge what the user wants in plain language, briefly reference the matched schema(s) by their human-readable titles, and ask ONE short follow-up question to clarify or confirm which is most relevant.
+Keep your response to 2–4 sentences. Never mention technical paths, blobDir values, or raw schema IDs.
+If no schemas matched, ask a clarifying question to better understand what the user needs.`;
+
+  // Build conversation history for Claude (strip any UI-only fields, keep role+content)
+  const history = messages
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .map(m => ({ role: m.role, content: m.content }));
+
+  // Append schema context as a system-style note on the last user turn
+  const historyWithContext = [
+    ...history.slice(0, -1),
+    { role: 'user', content: `${lastUser.content}\n\n[System context — not shown to user:${schemasContext}]` },
+  ];
+
+  try {
+    const chatRes = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      system: systemPrompt,
+      messages: historyWithContext,
+    });
+    const message = chatRes.content[0].text.trim();
+    res.json({ message, schemas: matchesWithSkills });
+  } catch (err) {
+    console.error('[skill-chat] conversation generation failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/catalog/skill-detail — fetch KB article(s) for a skill name via CapGPT
 router.post('/skill-detail', async (req, res) => {
   const { name } = req.body ?? {};
