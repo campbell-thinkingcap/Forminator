@@ -200,8 +200,38 @@ export default function SkillMap() {
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setMessages([...nextMessages, { role: 'assistant', content: data.message }]);
-      setSchemas(data.schemas ?? []);
+
+      if (data.schemas?.length === 1) {
+        // Single match — auto-select and go straight to form-filling
+        const match = data.schemas[0];
+        const schemaRes = await fetch(`${API_BASE}/catalog/schema?blobDir=${encodeURIComponent(match.blobDir)}`);
+        if (!schemaRes.ok) throw new Error(`HTTP ${schemaRes.status}`);
+        const schema = await schemaRes.json();
+
+        setSelectedSchema(schema);
+        setPhase('collecting');
+        setFormData({});
+        setEnumOptions(null);
+        setCollectingMessages([]);
+
+        const chatRes = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schema, messages: [], currentFormData: {} }),
+        });
+        if (!chatRes.ok) throw new Error(`HTTP ${chatRes.status}`);
+        const chatData = await chatRes.json();
+
+        const firstQuestion = { role: 'assistant', content: chatData.message };
+        setMessages([...nextMessages, firstQuestion]);
+        setCollectingMessages([firstQuestion]);
+        if (chatData.fieldUpdates) setFormData(prev => deepMerge(prev, chatData.fieldUpdates));
+        setEnumOptions(chatData.enumOptions ? { options: chatData.enumOptions, multiSelect: chatData.multiSelect ?? false } : null);
+      } else {
+        // Multiple matches or no match — show schemas in panel for user to pick
+        setMessages([...nextMessages, { role: 'assistant', content: data.message }]);
+        setSchemas(data.schemas ?? []);
+      }
     } catch (err) {
       setMessages([...nextMessages, { role: 'assistant', content: `Sorry, something went wrong: ${err.message}` }]);
       setSchemas([]);

@@ -502,7 +502,7 @@ NEVER say any of these things:
 - What fields or information will be collected
 
 WRONG: "Perfect! I have the right schema. Let's get started — I'll walk you through it step by step."
-RIGHT: "The Add Single User schema looks like the right fit — click it in the panel to begin."
+RIGHT: "The Add Single User schema matches what you need."
 
 If no schemas matched, ask a clarifying question to better understand what the user needs.
 Never mention technical paths, blobDir values, or raw schema IDs.`;
