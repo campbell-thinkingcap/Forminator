@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Bot, Send, User } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
@@ -71,12 +72,12 @@ export default function SkillMap() {
   };
 
   const handleSend = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!input.trim() || loading) return;
 
     const userMessage = { role: 'user', content: input.trim() };
     const nextMessages = [...messages, userMessage];
-    setMessages([...nextMessages, { role: 'assistant', content: '…', loading: true }]);
+    setMessages(nextMessages);
     setInput('');
     setLoading(true);
     setSelectedSkill(null);
@@ -227,76 +228,49 @@ export default function SkillMap() {
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flex: 1 }}>
 
           {/* Chat column */}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-
-            {/* Message list */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
-              {messages.map((msg, i) => {
-                const isUser = msg.role === 'user';
-                const isLoading = msg.loading;
-                return (
-                  <div key={i} style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
-                    <div style={{
-                      maxWidth: '80%',
-                      padding: '0.65rem 1rem',
-                      borderRadius: isUser ? '1.2rem 1.2rem 0.25rem 1.2rem' : '1.2rem 1.2rem 1.2rem 0.25rem',
-                      background: isUser ? 'var(--primary)' : 'var(--glass-bg)',
-                      border: isUser ? 'none' : '1px solid var(--glass-border)',
-                      color: isUser ? '#fff' : 'var(--text-main)',
-                      fontSize: '0.9rem',
-                      lineHeight: 1.55,
-                      backdropFilter: isUser ? undefined : 'var(--card-backdrop)',
-                      fontStyle: isLoading ? 'italic' : undefined,
-                      opacity: isLoading ? 0.6 : 1,
-                    }}>
-                      {msg.content}
-                    </div>
+          <div className="chat-panel" style={{ flex: 1, minWidth: 0 }}>
+            <div className="chat-messages">
+              {messages.map((msg, i) => (
+                <div key={i} className={`chat-message chat-message--${msg.role}`}>
+                  <div className="chat-avatar">
+                    {msg.role === 'assistant' ? <Bot size={13} /> : <User size={13} />}
                   </div>
-                );
-              })}
+                  <div className="chat-bubble-wrap">
+                    <div className="chat-bubble">{msg.content}</div>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="chat-message chat-message--assistant">
+                  <div className="chat-avatar"><Bot size={13} /></div>
+                  <div className="chat-bubble chat-thinking">
+                    <span /><span /><span />
+                  </div>
+                </div>
+              )}
               <div ref={chatEndRef} />
             </div>
-
-            {/* Input bar */}
-            <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="chat-input-row">
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
                 placeholder="Type a message…"
                 disabled={loading}
                 autoFocus
-                style={{
-                  flex: 1,
-                  padding: '0.65rem 1rem',
-                  borderRadius: 'var(--radius-input)',
-                  border: '1px solid var(--glass-border)',
-                  background: 'var(--input-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  opacity: loading ? 0.6 : 1,
-                }}
+                className="chat-input"
               />
               <button
-                type="submit"
+                onClick={handleSend}
                 disabled={loading || !input.trim()}
-                style={{
-                  padding: '0.65rem 1.25rem',
-                  borderRadius: 'var(--radius-btn)',
-                  background: 'var(--primary)',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: loading ? 'wait' : 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                  opacity: loading || !input.trim() ? 0.6 : 1,
-                }}
+                className="chat-send-btn"
+                title="Send"
               >
-                Send
+                <Send size={15} />
               </button>
-            </form>
+            </div>
           </div>
 
           {/* Right panel — schemas list, or skill detail when a pill is clicked */}
