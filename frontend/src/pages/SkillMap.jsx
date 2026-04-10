@@ -201,13 +201,6 @@ export default function SkillMap() {
     );
   };
 
-  const isLastAssistant = (index) => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'assistant') return i === index;
-    }
-    return false;
-  };
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -241,13 +234,10 @@ export default function SkillMap() {
               {messages.map((msg, i) => {
                 const isUser = msg.role === 'user';
                 const isLoading = msg.loading;
-                const showSchemas = !isUser && isLastAssistant(i) && !isLoading && schemas.length > 0;
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
-                    {/* Bubble */}
+                  <div key={i} style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
                     <div style={{
-                      maxWidth: showSchemas ? '42%' : '80%',
-                      flexShrink: 0,
+                      maxWidth: '80%',
                       padding: '0.65rem 1rem',
                       borderRadius: isUser ? '1.2rem 1.2rem 0.25rem 1.2rem' : '1.2rem 1.2rem 1.2rem 0.25rem',
                       background: isUser ? 'var(--primary)' : 'var(--glass-bg)',
@@ -261,15 +251,6 @@ export default function SkillMap() {
                     }}>
                       {msg.content}
                     </div>
-
-                    {/* Schema cards to the right of the last assistant message */}
-                    {showSchemas && (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
-                        {schemas.map((match) => (
-                          <SchemaCard key={match.blobDir} match={match} />
-                        ))}
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -318,86 +299,100 @@ export default function SkillMap() {
             </form>
           </div>
 
-          {/* Skill detail panel */}
-          {selectedSkill && (
+          {/* Right panel — schemas list, or skill detail when a pill is clicked */}
+          {(schemas.length > 0 || selectedSkill) && (
             <div style={{
-              width: 280,
+              width: 320,
               flexShrink: 0,
               position: 'sticky',
               top: '2rem',
               alignSelf: 'flex-start',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-card)',
-              padding: '1rem 1.25rem',
-              backdropFilter: 'var(--card-backdrop)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
             }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.6rem' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.95rem', lineHeight: 1.3 }}>
-                  {selectedSkill.name}
-                </div>
-                <button
-                  onClick={() => { setSelectedSkill(null); setSkillDetail(null); }}
-                  style={{
-                    flexShrink: 0,
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    lineHeight: 1,
-                    padding: '0 0.1rem',
-                  }}
-                  aria-label="Close skill panel"
-                >
-                  ×
-                </button>
-              </div>
-              {selectedSkill.category && (() => {
-                const skillConf = CONFIDENCE_COLORS[selectedSkill.confidence] ?? CONFIDENCE_COLORS.medium;
-                return (
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '999px',
-                    fontSize: '0.7rem',
-                    background: skillConf.bg,
-                    border: `1px solid ${skillConf.border}`,
-                    color: skillConf.text,
-                    marginBottom: '0.75rem',
-                  }}>
-                    {selectedSkill.category}
-                  </span>
-                );
-              })()}
-              <div style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
-                {!skillDetail || skillDetail.loading ? (
-                  <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    Looking up in knowledge base…
-                  </span>
-                ) : skillDetail.error ? (
-                  <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    Could not load description.
-                  </span>
-                ) : skillDetail.docs.length === 0 ? (
-                  <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    No knowledge base article found.
-                  </span>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {skillDetail.docs.map((doc, i) => (
-                      <div key={i}>
-                        <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-                          {doc.title}
-                        </div>
-                        {doc.summary && (
-                          <div style={{ color: 'var(--text-muted)' }}>{doc.summary}</div>
-                        )}
-                      </div>
-                    ))}
+              {selectedSkill ? (
+                /* Skill detail */
+                <div style={{
+                  background: 'var(--glass-bg)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-card)',
+                  padding: '1rem 1.25rem',
+                  backdropFilter: 'var(--card-backdrop)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', lineHeight: 1.3 }}>
+                      {selectedSkill.name}
+                    </div>
+                    <button
+                      onClick={() => { setSelectedSkill(null); setSkillDetail(null); }}
+                      style={{
+                        flexShrink: 0,
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        lineHeight: 1,
+                        padding: '0 0.1rem',
+                      }}
+                      aria-label="Close skill panel"
+                    >
+                      ×
+                    </button>
                   </div>
-                )}
-              </div>
+                  {selectedSkill.category && (() => {
+                    const skillConf = CONFIDENCE_COLORS[selectedSkill.confidence] ?? CONFIDENCE_COLORS.medium;
+                    return (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '999px',
+                        fontSize: '0.7rem',
+                        background: skillConf.bg,
+                        border: `1px solid ${skillConf.border}`,
+                        color: skillConf.text,
+                        marginBottom: '0.75rem',
+                      }}>
+                        {selectedSkill.category}
+                      </span>
+                    );
+                  })()}
+                  <div style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
+                    {!skillDetail || skillDetail.loading ? (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Looking up in knowledge base…
+                      </span>
+                    ) : skillDetail.error ? (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Could not load description.
+                      </span>
+                    ) : skillDetail.docs.length === 0 ? (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        No knowledge base article found.
+                      </span>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {skillDetail.docs.map((doc, i) => (
+                          <div key={i}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                              {doc.title}
+                            </div>
+                            {doc.summary && (
+                              <div style={{ color: 'var(--text-muted)' }}>{doc.summary}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Schema cards */
+                schemas.map((match) => (
+                  <SchemaCard key={match.blobDir} match={match} />
+                ))
+              )}
             </div>
           )}
         </div>
