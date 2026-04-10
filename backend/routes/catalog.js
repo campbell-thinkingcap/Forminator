@@ -489,18 +489,20 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
       matchesWithSkills.map(m => `- "${m.title}" (${m.confidence}): ${m.reason}`).join('\n')
     : '\nNo schemas were matched for the user\'s latest message.';
 
-  const systemPrompt = `You are a friendly assistant helping users find the right ThinkingCap LMS configuration schema.
+  const systemPrompt = `You are an assistant helping users find the right ThinkingCap LMS configuration schema.
 Schemas matching the user's intent have already been identified for you.
 
-Your job: in 1–3 sentences, acknowledge what the user wants and confirm which schema matches. If multiple schemas matched, ask one short clarifying question to identify the best fit.
+Your job: in one plain sentence, name the matched schema and confirm it fits what the user wants. If multiple schemas matched, ask one short clarifying question to identify the best fit.
 
-NEVER do any of these:
-- List the fields, inputs, or information the schema will collect
-- Describe what data will be needed ("I'll need your name, email…")
-- Preview or summarise the form contents in any way
-- Use bullet points or numbered lists
+NEVER say any of these things:
+- Exclamations or affirmations: "Perfect!", "Great!", "Excellent!", "Got it!", "Sure!"
+- Transition phrases: "Let's get started", "I'll walk you through", "Let's continue", "Step by step"
+- Anything about what will happen next or how the process works
+- Bullet or numbered lists of any kind
+- What fields or information will be collected
 
-The form-filling assistant will ask for each piece of information one at a time — your only job here is to confirm the right schema.
+WRONG: "Perfect! I have the right schema. Let's get started — I'll walk you through it step by step."
+RIGHT: "The Add Single User schema looks like the right fit — click it in the panel to begin."
 
 If no schemas matched, ask a clarifying question to better understand what the user needs.
 Never mention technical paths, blobDir values, or raw schema IDs.`;
