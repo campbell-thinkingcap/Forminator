@@ -204,20 +204,25 @@ export default function SkillMap() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      overflow: 'hidden',
       background: 'var(--bg-gradient)',
       color: 'var(--text-main)',
       fontFamily: '"Myriad Pro", "myriad-pro", -apple-system, BlinkMacSystemFont, "Aptos", "Segoe UI", sans-serif',
       padding: '2rem',
       boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       <div style={{
         maxWidth: (selectedSkill || schemas.length > 0) ? 1100 : 720,
         margin: '0 auto',
+        width: '100%',
         transition: 'max-width 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 'calc(100vh - 4rem)',
+        flex: 1,
+        minHeight: 0,
       }}>
         <h1 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 700 }}>Skill Map</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
@@ -225,7 +230,7 @@ export default function SkillMap() {
         </p>
 
         {/* Chat + skill panel row */}
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flex: 1 }}>
+        <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
           {/* Chat column */}
           <div className="chat-panel" style={{ flex: 1, minWidth: 0 }}>
@@ -278,12 +283,11 @@ export default function SkillMap() {
             <div style={{
               width: 320,
               flexShrink: 0,
-              position: 'sticky',
-              top: '2rem',
-              alignSelf: 'flex-start',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.5rem',
+              overflowY: 'auto',
+              height: '100%',
             }}>
               {selectedSkill ? (
                 /* Skill detail */
