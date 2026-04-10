@@ -49,8 +49,10 @@ async function fetchRelatedSkills(phrases) {
           id::text
         )
       )
-        content::jsonb->>'name'     AS name,
-        content::jsonb->>'category' AS category
+        content::jsonb->>'name'        AS name,
+        content::jsonb->>'category'    AS category,
+        content::jsonb->>'description' AS description,
+        content::jsonb->>'intent'      AS intent
       FROM conversation_messages
       WHERE conversation_id = $1
         AND metadata->>'fabric_type' = 'rsd'
@@ -64,7 +66,12 @@ async function fetchRelatedSkills(phrases) {
       LIMIT 8
     `, params);
 
-    const results = rows.filter(r => r.name);
+    const results = rows.filter(r => r.name).map(r => ({
+      name:        r.name,
+      category:    r.category,
+      description: r.description ?? null,
+      intent:      r.intent      ?? null,
+    }));
     console.log(`[tapestry] skill query returned ${results.length} match(es)${results.length ? ': ' + results.map(r => `"${r.name}"`).join(', ') : ''}`);
     return results;
   } catch (err) {
