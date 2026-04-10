@@ -201,9 +201,14 @@ export default function SkillMap() {
       }
       const data = await res.json();
 
-      if (data.schemas?.length === 1) {
-        // Single match — auto-select and go straight to form-filling
-        const match = data.schemas[0];
+      const highMatches = (data.schemas ?? []).filter(s => s.confidence === 'high');
+      const matchToSelect = data.schemas?.length === 1
+        ? data.schemas[0]
+        : highMatches.length === 1 ? highMatches[0] : null;
+
+      if (matchToSelect) {
+        // Clear winner — auto-select and go straight to form-filling
+        const match = matchToSelect;
         const schemaRes = await fetch(`${API_BASE}/catalog/schema?blobDir=${encodeURIComponent(match.blobDir)}`);
         if (!schemaRes.ok) throw new Error(`HTTP ${schemaRes.status}`);
         const schema = await schemaRes.json();
