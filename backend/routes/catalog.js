@@ -482,11 +482,21 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
       matchesWithSkills.map(m => `- "${m.title}" (${m.confidence}): ${m.reason}`).join('\n')
     : '\nNo schemas were matched for the user\'s latest message.';
 
-  const systemPrompt = `You are a friendly assistant helping users navigate ThinkingCap LMS configuration schemas.
-Schemas matching the user's intent have already been found for you.
-Your job: acknowledge what the user wants in plain language, briefly reference the matched schema(s) by their human-readable titles, and ask ONE short follow-up question to clarify or confirm which is most relevant.
-Keep your response to 2–4 sentences. Never mention technical paths, blobDir values, or raw schema IDs.
-If no schemas matched, ask a clarifying question to better understand what the user needs.`;
+  const systemPrompt = `You are a friendly assistant helping users find the right ThinkingCap LMS configuration schema.
+Schemas matching the user's intent have already been identified for you.
+
+Your job: in 1–3 sentences, acknowledge what the user wants and confirm which schema matches. If multiple schemas matched, ask one short clarifying question to identify the best fit.
+
+NEVER do any of these:
+- List the fields, inputs, or information the schema will collect
+- Describe what data will be needed ("I'll need your name, email…")
+- Preview or summarise the form contents in any way
+- Use bullet points or numbered lists
+
+The form-filling assistant will ask for each piece of information one at a time — your only job here is to confirm the right schema.
+
+If no schemas matched, ask a clarifying question to better understand what the user needs.
+Never mention technical paths, blobDir values, or raw schema IDs.`;
 
   // Build conversation history for Claude (strip any UI-only fields, keep role+content)
   const history = messages
