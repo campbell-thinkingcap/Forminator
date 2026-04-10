@@ -92,7 +92,7 @@ ALREADY FILLED (do not ask about these):
 ${filled.length ? filled.join(', ') : 'none'}
 
 RULES:
-1. Start immediately with the first unfilled, non-AUTO-ASSIGNED field. No preamble. No "What would you like to do?".
+1. Start immediately with the first unfilled, non-AUTO-ASSIGNED field. No preamble. No "What would you like to do?". NEVER ask "would you like me to walk you through…" or "do you have any questions before we begin?" — just ask the first field directly.
 2. Name the field you are asking about so the user knows exactly what is needed.
 3. For enum fields, always list the valid options explicitly. Only accept one of those options — if the user's answer does not match, tell them and ask again.
 4. For boolean fields, present Yes/No explicitly. Only accept Yes or No.
@@ -122,7 +122,7 @@ router.post('/', async (req, res) => {
   // We prepend a hidden "Start" message that is never shown in the UI.
   // Strip any UI-only metadata (enumOptions, multiSelect) — Anthropic only accepts role + content.
   const apiMessages = [
-    { role: 'user', content: 'Start' },
+    { role: 'user', content: 'Ask me the first field.' },
     ...messages.map(({ role, content }) => ({ role, content }))
   ];
 
