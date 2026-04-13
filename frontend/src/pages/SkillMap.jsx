@@ -440,6 +440,15 @@ export default function SkillMap() {
                   </div>
                 </div>
               )}
+              {phase === 'discovery' && schemas.length > 0 && !loading && (
+                <div className="chat-enum-options">
+                  {schemas.map((match, i) => (
+                    <button key={i} className="chat-enum-option" onClick={() => handleSchemaSelect(match)}>
+                      {match.title}
+                    </button>
+                  ))}
+                </div>
+              )}
               {phase === 'collecting' && enumOptions && !loading && (
                 <div className="chat-enum-options">
                   {enumOptions.options.map((opt, i) => (
@@ -459,13 +468,13 @@ export default function SkillMap() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
                 placeholder="Type a message…"
-                disabled={loading || phase === 'complete' || (phase === 'collecting' && !!enumOptions)}
+                disabled={loading || phase === 'complete' || (phase === 'collecting' && !!enumOptions) || (phase === 'discovery' && schemas.length > 0)}
                 autoFocus
                 className="chat-input"
               />
               <button
                 onClick={handleSend}
-                disabled={loading || !input.trim() || phase === 'complete' || (phase === 'collecting' && !!enumOptions)}
+                disabled={loading || !input.trim() || phase === 'complete' || (phase === 'collecting' && !!enumOptions) || (phase === 'discovery' && schemas.length > 0)}
                 className="chat-send-btn"
                 title="Send"
               >
