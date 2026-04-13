@@ -483,50 +483,46 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
     }
   }
 
-  // --- Step 2: Generate a conversational reply using history + schema results ---
-  const schemasContext = matchesWithSkills.length > 0
-    ? `\nSchemas matched for the user's latest message:\n` +
-      matchesWithSkills.map(m => `- "${m.title}" (${m.confidence}): ${m.reason}`).join('\n')
-    : '\nNo schemas were matched for the user\'s latest message.';
+  // --- Step 2: Generate a conversational reply ONLY when no schemas matched ---
+  // When schemas were found, the frontend handles everything (auto-select or schema cards).
+  // Generating a message in that case is wasted and risks showing a false confirmation.
+  if (matchesWithSkills.length > 0) {
+    return res.json({ message: '', schemas: matchesWithSkills });
+  }
 
+  // No schemas found — ask a clarifying question.
   const systemPrompt = `You are an assistant helping users find the right ThinkingCap LMS configuration schema.
-Schemas matching the user's intent have already been identified for you.
+The user's request did not match any known schema.
 
-Your job: in one plain sentence, name the matched schema and confirm it fits what the user wants. If multiple schemas matched, ask one short clarifying question to identify the best fit.
+Ask ONE short clarifying question to better understand what they want to do.
 
-NEVER say any of these things:
-- Exclamations or affirmations: "Perfect!", "Great!", "Excellent!", "Got it!", "Sure!"
-- Transition phrases: "Let's get started", "I'll walk you through", "Let's continue", "Step by step"
-- Anything about what will happen next or how the process works
-- Bullet or numbered lists of any kind
-- What fields or information will be collected
+RULES:
+- Never name or confirm a specific schema — you do not know which one applies yet.
+- Never say anything was found or matched.
+- Never use exclamations: "Perfect!", "Great!", "Got it!", "Sure!"
+- Never use transition phrases: "Let's get started", "I'll walk you through"
+- No bullet or numbered lists.
+- One plain sentence only.
 
-WRONG: "Perfect! I have the right schema. Let's get started — I'll walk you through it step by step."
-RIGHT: "The Add Single User schema matches what you need."
-
-If no schemas matched, ask a clarifying question to better understand what the user needs.
-Never mention technical paths, blobDir values, or raw schema IDs.`;
+WRONG: "The Add Single User schema matches what you need."
+WRONG: "I found a match for that request."
+RIGHT: "Are you looking to add a single user manually, or import several at once?"
+RIGHT: "Could you describe what you're trying to set up in a bit more detail?"`;
 
   // Build conversation history for Claude (strip any UI-only fields, keep role+content)
   const history = messages
     .filter(m => m.role === 'user' || m.role === 'assistant')
     .map(m => ({ role: m.role, content: m.content }));
 
-  // Append schema context as a system-style note on the last user turn
-  const historyWithContext = [
-    ...history.slice(0, -1),
-    { role: 'user', content: `${lastUser.content}\n\n[System context — not shown to user:${schemasContext}]` },
-  ];
-
   try {
     const chatRes = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
+      max_tokens: 256,
       system: systemPrompt,
-      messages: historyWithContext,
+      messages: history,
     });
     const message = chatRes.content[0].text.trim();
-    res.json({ message, schemas: matchesWithSkills });
+    res.json({ message, schemas: [] });
   } catch (err) {
     console.error('[skill-chat] conversation generation failed:', err.message);
     res.status(500).json({ error: err.message });
