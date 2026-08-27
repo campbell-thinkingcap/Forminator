@@ -1,0 +1,14 @@
+{
+  "tripType": "one-way",
+  "origin": "YYZ",
+  "serverToken": "tok_123",
+  "source": "web",
+  "seatClass": "economy",
+  "mealPref": "standard",
+  "extras": ["wifi"],
+  "agree": "yes",
+  "airline": "AC",
+  "allergies": ["peanuts"],
+  "returnDate": "not-a-date",
+  "type": "flex"
+}

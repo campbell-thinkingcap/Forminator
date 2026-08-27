@@ -22,6 +22,7 @@ app.use('/api/data', dataRouter);
 app.use('/api/azure', azureRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/chat/edit', chatEditRouter);
+app.post('/api/schema/lint', chatEditRouter.lintHandler);
 app.use('/api/dbmeta', dbmetaRouter);
 app.use('/api/catalog', catalogRouter);
 app.use('/api/schema-router', schemaRouterRouter);

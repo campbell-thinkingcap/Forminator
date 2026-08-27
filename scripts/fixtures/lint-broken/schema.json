@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Deliberately Broken Schema",
+  "description": "Too short.",
+  "type": "object",
+  "required": ["tripType", "serverToken"],
+  "properties": {
+    "bookingId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tripType": {
+      "type": "string",
+      "enum": ["one-way", "round-trip"],
+      "x-order": 1
+    },
+    "origin": {
+      "type": "string",
+      "description": "IATA code or city name for the departure location.",
+      "x-prompt": "Where are you flying from?"
+    },
+    "serverToken": {
+      "type": "string",
+      "description": "Injected from auth context at runtime.",
+      "x-source": "app"
+    },
+    "source": {
+      "type": "string",
+      "description": "Booking channel.",
+      "x-source": "upstream"
+    },
+    "seatClass": {
+      "type": "string",
+      "description": "Cabin class.",
+      "enum": ["economy", "premium", "business", "first", "basic", "plus"],
+      "x-widget": "radio",
+      "x-depends-on": "mealPref=kosher"
+    },
+    "mealPref": {
+      "type": "string",
+      "description": "Meal preference. 'standard' = default tray; 'kosher' = certified kosher; 'vegan' = plant-based.",
+      "enum": ["standard", "kosher", "vegan"],
+      "x-depends-on": { "field": "seatClass", "equals": "plus" }
+    },
+    "extras": {
+      "type": "array",
+      "description": "Paid add-ons.",
+      "items": { "type": "string", "enum": ["wifi", "bag", "lounge"] },
+      "x-widget": "dropdown"
+    },
+    "agree": {
+      "type": "string",
+      "description": "Whether the user agrees to the fare rules.",
+      "x-widget": "yesno"
+    },
+    "airline": {
+      "type": "string",
+      "description": "Operating airline, chosen from the live carrier list.",
+      "x-options-source": "db",
+      "enum": ["AC", "UA", "BA"]
+    },
+    "allergies": {
+      "type": "array",
+      "description": "Allergen flags from the profile service.",
+      "items": { "type": "string" },
+      "x-options-source": "app",
+      "x-options-preview": "peanuts"
+    },
+    "returnDate": {
+      "type": "string",
+      "format": "date",
+      "description": "The date the user will return.",
+      "x-depends-on": { "field": "ghost", "truthy": true }
+    },
+    "type": {
+      "type": "string",
+      "description": "Fare family code chosen by the user."
+    }
+  }
+}
