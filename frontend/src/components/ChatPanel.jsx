@@ -9,8 +9,13 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState([]);
+  // Answered-set (standard §5.6): fields the user explicitly confirmed via chips,
+  // plus anything the model recorded. Sent with every POST so the server never
+  // re-asks an answered field — including explicit-false booleans.
+  const [answeredKeys, setAnsweredKeys] = useState([]);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const chipsRef = useRef(null);
   const schemaKeyRef = useRef(null);
 
   // Scroll to bottom whenever messages or loading state changes
@@ -37,9 +42,23 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
     schemaKeyRef.current = key;
     setMessages([]);
     setInput('');
+    setAnsweredKeys([]);
     initChat(schema);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schema]);
+
+  const markAnswered = (keys) => {
+    setAnsweredKeys(prev => [...new Set([...prev, ...keys])]);
+  };
+
+  const applyResponse = (res) => {
+    const { message, fieldUpdates, enumOptions, multiSelect, field, widget } = res.data;
+    setMessages(prev => [...prev, { role: 'assistant', content: message, enumOptions, multiSelect, field, widget }]);
+    if (fieldUpdates && Object.keys(fieldUpdates).length > 0) {
+      markAnswered(Object.keys(fieldUpdates));
+      onFieldUpdates(fieldUpdates);
+    }
+  };
 
   const initChat = async (currentSchema) => {
     setLoading(true);
@@ -49,9 +68,10 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
         messages: [],
         currentFormData: {}
       });
-      const { message, fieldUpdates, enumOptions, multiSelect } = res.data;
-      setMessages([{ role: 'assistant', content: message, enumOptions, multiSelect }]);
+      const { message, fieldUpdates, enumOptions, multiSelect, field, widget } = res.data;
+      setMessages([{ role: 'assistant', content: message, enumOptions, multiSelect, field, widget }]);
       if (fieldUpdates && Object.keys(fieldUpdates).length > 0) {
+        markAnswered(Object.keys(fieldUpdates));
         onFieldUpdates(fieldUpdates);
       }
     } catch {
@@ -64,7 +84,9 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
     }
   };
 
-  const sendMessage = async (text) => {
+  // choiceAnswer {field, value} — chip clicks record the value deterministically
+  // server-side instead of relying on the model to parse the label text.
+  const sendMessage = async (text, choiceAnswer) => {
     if (!text.trim() || loading) return;
 
     const userMsg = { role: 'user', content: text.trim() };
@@ -77,13 +99,11 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
       const res = await axios.post(`${API_BASE}/chat`, {
         schema,
         messages: updatedMessages,
-        currentFormData
+        currentFormData,
+        answered: choiceAnswer ? [...new Set([...answeredKeys, choiceAnswer.field])] : answeredKeys,
+        ...(choiceAnswer ? { choiceAnswer } : {})
       });
-      const { message, fieldUpdates, enumOptions, multiSelect } = res.data;
-      setMessages(prev => [...prev, { role: 'assistant', content: message, enumOptions, multiSelect }]);
-      if (fieldUpdates && Object.keys(fieldUpdates).length > 0) {
-        onFieldUpdates(fieldUpdates);
-      }
+      applyResponse(res);
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -104,14 +124,37 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
   };
 
   const lastMsg = messages[messages.length - 1];
-  const activeEnumOptions = !loading && lastMsg?.role === 'assistant' && lastMsg?.enumOptions?.length > 0
+  // Chips lock the text input — except dropdown, which is text-first (free-text
+  // fallback) with the options shown as an enumerated list.
+  const isChipWidget = lastMsg?.widget !== 'dropdown';
+  const activeEnumOptions = !loading && lastMsg?.role === 'assistant' && lastMsg?.enumOptions?.length > 0 && isChipWidget
     ? lastMsg
     : null;
+  const activeDropdownList = !loading && lastMsg?.role === 'assistant' && lastMsg?.widget === 'dropdown' && lastMsg?.enumOptions?.length > 0
+    ? lastMsg
+    : null;
+
+  // Move keyboard focus to the first chip when a new set of options arrives —
+  // the text input is disabled while chips show, so the usual focus-restore no-ops.
+  useEffect(() => {
+    if (activeEnumOptions) chipsRef.current?.querySelector('button, input')?.focus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, loading]);
+
+  // Chip click: visible text stays the label; the structured value rides along.
+  const pickOption = (msg, opt) => {
+    const label = opt === null || opt === undefined ? '(none)' : String(opt);
+    if (msg.widget === 'yesno') {
+      sendMessage(label, { field: msg.field, value: opt === 'Yes' });
+    } else {
+      sendMessage(label, { field: msg.field, value: opt });
+    }
+  };
 
   const renderEnumOptions = (msg) => {
     if (msg.multiSelect) {
       return (
-        <div className="chat-enum-options">
+        <div className="chat-enum-options" ref={chipsRef}>
           {msg.enumOptions.map(opt => {
             const label = opt === null || opt === undefined ? '(none)' : String(opt);
             const checked = selectedOptions.includes(opt);
@@ -133,7 +176,10 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
           <button
             className="chat-enum-confirm"
             disabled={selectedOptions.length === 0}
-            onClick={() => sendMessage(selectedOptions.map(o => String(o)).join(', '))}
+            onClick={() => sendMessage(
+              selectedOptions.map(o => String(o)).join(', '),
+              { field: msg.field, value: selectedOptions }
+            )}
           >
             Confirm
           </button>
@@ -142,14 +188,14 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
     }
 
     return (
-      <div className="chat-enum-options">
+      <div className="chat-enum-options" ref={chipsRef}>
         {msg.enumOptions.map(opt => {
           const label = opt === null || opt === undefined ? '(none)' : String(opt);
           return (
             <button
               key={label}
               className="chat-enum-option"
-              onClick={() => sendMessage(label)}
+              onClick={() => pickOption(msg, opt)}
             >
               <span className="chat-enum-radio" aria-hidden="true" />
               {label}
@@ -159,6 +205,15 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
       </div>
     );
   };
+
+  // Dropdown: options as enumerated text; the user types a value (or the number).
+  const renderDropdownList = (msg) => (
+    <ol className="chat-enum-list">
+      {msg.enumOptions.map((opt, i) => (
+        <li key={i}>{opt === null || opt === undefined ? '(none)' : String(opt)}</li>
+      ))}
+    </ol>
+  );
 
   return (
     <div className="chat-panel">
@@ -174,7 +229,7 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
             <div className="chat-bubble-wrap">
               <div className="chat-bubble">{msg.content}</div>
               {i === messages.length - 1 && msg.role === 'assistant' && msg.enumOptions && !loading && (
-                renderEnumOptions(msg)
+                msg.widget === 'dropdown' ? renderDropdownList(msg) : renderEnumOptions(msg)
               )}
             </div>
           </div>
@@ -195,7 +250,7 @@ export default function ChatPanel({ schema, currentFormData, onFieldUpdates }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={activeEnumOptions ? 'Select an option above…' : 'Type your answer…'}
+          placeholder={activeEnumOptions ? 'Select an option above…' : activeDropdownList ? 'Type the number or name of an option…' : 'Type your answer…'}
           disabled={loading || !schema || !!activeEnumOptions}
           className="chat-input"
           ref={inputRef}

@@ -1,6 +1,34 @@
 import React from 'react';
-import FormField from './FormField';
+import FormField, { widgetFor } from './FormField';
 import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+
+// Form field order: x-order ascending first, then declaration order (the chat's
+// required-first rule in standard §5.2 is ask-order only — the form does not
+// re-sort by required).
+const orderedEntries = (properties) =>
+  Object.entries(properties)
+    .map(([key, prop], i) => ({ key, prop, i }))
+    .sort((a, b) => {
+      const ao = typeof a.prop['x-order'] === 'number' ? a.prop['x-order'] : null;
+      const bo = typeof b.prop['x-order'] === 'number' ? b.prop['x-order'] : null;
+      if (ao === null && bo === null) return a.i - b.i;
+      if (ao === null) return 1;
+      if (bo === null) return -1;
+      return ao - bo || a.i - b.i;
+    });
+
+// Siblings sharing an x-group value render under one group header. Grouping is by
+// consecutive runs — with x-order all-or-nothing, authors control adjacency.
+const groupRuns = (entries) => {
+  const runs = [];
+  for (const e of entries) {
+    const group = e.prop['x-group'] ?? null;
+    const last = runs[runs.length - 1];
+    if (last && last.group === group) last.items.push(e);
+    else runs.push({ group, items: [e] });
+  }
+  return runs;
+};
 
 const DynamicForm = ({ schema, data = {}, onChange, onFieldFocus }) => {
   if (!schema || !schema.properties) return null;
@@ -32,6 +60,23 @@ const DynamicForm = ({ schema, data = {}, onChange, onFieldFocus }) => {
     }
 
     if (propSchema.type === 'array') {
+      // Enum multi-select renders as a checkbox group, not an add/remove list
+      if (widgetFor(propSchema) === 'checkbox') {
+        return (
+          <FormField
+            key={key}
+            label={key}
+            type="array"
+            value={value}
+            onChange={(val) => handleFieldChange(key, val)}
+            onFocus={() => onFieldFocus?.(key)}
+            description={propSchema.description}
+            schema={propSchema}
+            required={isRequired}
+          />
+        );
+      }
+
       const items = Array.isArray(value) ? value : [];
 
       const handleAdd = () => {
@@ -114,7 +159,12 @@ const DynamicForm = ({ schema, data = {}, onChange, onFieldFocus }) => {
 
   return (
     <div className="dynamic-form">
-      {Object.entries(schema.properties).map(([key, propSchema]) => renderProperty(key, propSchema))}
+      {groupRuns(orderedEntries(schema.properties)).map((run, i) => (
+        <React.Fragment key={run.group ?? i}>
+          {run.group && <h3 className="form-group-header">{run.group}</h3>}
+          {run.items.map(({ key, prop }) => renderProperty(key, prop))}
+        </React.Fragment>
+      ))}
     </div>
   );
 };

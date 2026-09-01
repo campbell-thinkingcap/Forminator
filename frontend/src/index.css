@@ -275,6 +275,65 @@ input[type="checkbox"] {
   accent-color: var(--primary);
 }
 
+/* x-widget renderers (Schema Authoring Standard §4) */
+
+.radio-group,
+.checkbox-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radio-option,
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0;
+  padding: 0.35rem 0;
+  font-weight: 400;
+}
+
+input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--primary);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-btn);
+  overflow: hidden;
+}
+
+.segmented-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 0;
+  padding: 0.65rem 1.25rem;
+  font-weight: 500;
+}
+
+.segmented-btn:hover {
+  background: var(--input-bg);
+  transform: none;
+}
+
+.segmented-btn.active,
+.segmented-btn.active:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.form-group-header {
+  font-size: 1.05rem;
+  margin: 1.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-main);
+}
+
 button {
   background: var(--primary);
   color: white;
@@ -719,6 +778,17 @@ button.secondary:hover {
   padding: 0.35rem 0.9rem;
   font-size: 0.78rem;
   border-radius: 0.5rem;
+}
+
+/* Dropdown widget: options as enumerated text, free-text answer */
+.chat-enum-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 /* Edit panel */
