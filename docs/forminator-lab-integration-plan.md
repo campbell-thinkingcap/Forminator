@@ -1,5 +1,7 @@
 # Forminator → ThinkingCap Lab Integration Plan
 
+**Status:** Phase 0 ✅ `3a2ad43` · Phase 1 ✅ `6ac5145` · Phase 2 next · Phases 3–4 pending
+
 **Goal (Campbell's two gaps):**
 1. **Schema authoring standard** — how to write JSON Schemas so an AI asks the right questions and enums project to the right widget (radio / single-choice / dropdown / checkbox).
 2. **Lab integration** — the Lab console chat understands intent → picks the right schema → collects data conversationally → projects it to a work surface (form fills live beside the chat; enums render as chat chips). On completion: AJV-validate + store generically. **No LMS writes in v1.**
@@ -45,6 +47,19 @@
 ---
 
 ## Phase 1 — Forminator runtime honors its own spec
+
+> **DONE 2026-09-01 — `6ac5145`.** All items landed plus review-driven extras:
+> ux-reviewer fixes (useId radio names, aria-pressed, role=group, chip focus
+> management, answered-on-success, dropdown hint, touch targets) and
+> security-auditor fixes (choiceAnswer field/value validation). Also fixed a
+> pre-existing crash: Anthropic responses can lead with a thinking block, so
+> `content[0].text.trim()` threw — the route now selects the text block.
+> Behavior changes called out in the commit: explicit `false` counts as filled
+> (§5.6), the model no longer re-lists enum options in prose (§5.5), booleans
+> render as a Yes/No segmented control in the form (§4 default).
+> Open follow-up (pre-existing, flagged by the auditor for Phase 4): `/api/chat`
+> is unauthenticated with wide CORS — fine for localhost dev, must close before
+> any wider exposure.
 
 **CREATE `Forminator/backend/lib/fieldPlan.js`** — pure `buildFieldPlan(schema, formData, answeredKeys)` → ordered ask-plan `{key, prompt, hint, widget, enumOptions, multiSelect, skippable}` implementing the Phase 0 precedence rules. Small `scripts/verify-fieldPlan.mjs` harness (repo has no test runner).
 
