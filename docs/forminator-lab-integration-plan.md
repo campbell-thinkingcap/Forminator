@@ -1,6 +1,6 @@
 # Forminator → ThinkingCap Lab Integration Plan
 
-**Status:** Phase 0 ✅ `3a2ad43` · Phase 1 ✅ `6ac5145` · Phase 2 next · Phases 3–4 pending
+**Status:** Phase 0 ✅ `3a2ad43` · Phase 1 ✅ `6ac5145` · Phase 2 ✅ (tc-surface-forms, standalone-verified) · Phases 3–4 pending
 
 **Goal (Campbell's two gaps):**
 1. **Schema authoring standard** — how to write JSON Schemas so an AI asks the right questions and enums project to the right widget (radio / single-choice / dropdown / checkbox).
