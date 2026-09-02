@@ -1,6 +1,6 @@
 # Forminator → ThinkingCap Lab Integration Plan
 
-**Status:** Phase 0 ✅ `3a2ad43` · Phase 1 ✅ `6ac5145` · Phase 2 ✅ (tc-surface-forms, standalone-verified) · Phases 3–4 pending
+**Status:** Phase 0 ✅ `3a2ad43` · Phase 1 ✅ `6ac5145` · Phase 2 ✅ (tc-surface-forms, standalone-verified) · Phase 3 ✅ (phoenix `04fe472` + tc-lab `c4c04f1`, 2026-09-02) · Phase 4 pending
 
 **Goal (Campbell's two gaps):**
 1. **Schema authoring standard** — how to write JSON Schemas so an AI asks the right questions and enums project to the right widget (radio / single-choice / dropdown / checkbox).
@@ -100,6 +100,30 @@ Scaffold: `bash tc-surface-template/scaffold.sh forms` → repo `tc-surface-form
 ---
 
 ## Phase 3 — Phoenix + tc-lab integration
+
+> **DONE 2026-09-02 — phoenix `04fe472` + tc-lab `c4c04f1` (both LOCAL, not
+> pushed; deploys are Phase 4 operator-gated).** Shapes landed as planned with
+> these deliberate deviations: (1) the three lib files live under
+> `phoenix/src/lib/forms/` (`catalog.ts`, `choicePlan.ts` PURE, `collection.ts`
+> db) following the badges/interview+draft split, not at lib root; (2) the PG
+> table is operator-applied `sql/029_form_collection.sql` with graceful
+> degradation (console_events precedent), not ensure-on-boot; (3) no separate
+> `formSubmitted` ack — the surface's reported `recordId` in its context `data`
+> IS the completion signal (one source of truth), and `choiceAnswer` carries
+> `schemaDir` so two concurrent collections never cross-contaminate;
+> (4) `surface_command` for forms requires `schemaDir`, catalog-verified
+> pre-mint, and attaches the server-reconciled `formState` (never
+> model-supplied) so worker-side validate/submit check the whole form.
+> Verified: 348 phoenix tests 0 fail (22 new choicePlan tests), tc-lab tsc +
+> vite build, live Azure catalog smoke (164 entries, allow-list, LLM routing),
+> scratch-PG SQL smoke (7 assertions). ux-reviewer + security-auditor both ran;
+> a11y highs fixed in tc-lab, audit lows fixed in phoenix (grant re-check,
+> pre-mint catalog check, second `__proto__` guard); client-asserted recordId
+> limitation documented in collection.ts. ALSO in the phoenix commit: the
+> 2026-08-21 console guardrail + text-attachment work (was uncommitted; same
+> files, no interactive staging available); its broken office-status onboard
+> hunk was dropped (references nonexistent config; preserved in phoenix
+> stash@{1}).
 
 **CREATE `phoenix/src/lib/formsCatalog.ts`** — `loadCatalog()` (blob `schema-catalog.json`, env `formsCatalogStorageAccount/Container/Blob` in `config.ts`, ETag + 5-min TTL + stale-while-revalidate); `compactIndex()` (routing fields only — keeps 164-schema prompt small); `routeIntent(query)` via existing provider client → up to 5 `{blobDir, title, confidence, reason}`.
 
