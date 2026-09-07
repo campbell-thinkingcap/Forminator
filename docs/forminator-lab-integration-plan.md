@@ -203,10 +203,20 @@ Scaffold: `bash tc-surface-template/scaffold.sh forms` → repo `tc-surface-form
 >   console-api redeployed to `1de6ffc` by doug 06:15Z (patch.console_deploy_job)
 >   — but `SCHEMAS_STORAGE_ACCOUNT`/`SCHEMAS_STORAGE_KEY` are STILL ABSENT from
 >   the container env: phoenix catalog loads degrade until set.
-> - **Operator-gated (pending Douglas)**: ~~apply sql/029 + sql/031~~ DONE;
->   phoenix env SCHEMAS_* (redeploy ~~≥ `1de6ffc`~~ DONE 06:15Z); forms.env on
->   CC+CE; systemd; NSG; Caddy; capcom onboard (skip worker_types); pilot
->   grants via grid; browser E2E per DEPLOY-CHECKLIST.md step 8.
+> - **Operator-gated — infra ALL DONE 2026-09-07 ~13:10Z (Campbell-driven, via
+>   run-command)**: ~~apply sql/029 + sql/031~~ DONE; ~~phoenix env SCHEMAS_*~~
+>   DONE both nodes (console.env, console-api restarted, clean boot); ~~redeploy
+>   ≥ `1de6ffc`~~ DONE 06:15Z; ~~forms.env CC+CE~~ DONE (compliance-reports.env
+>   + SCHEMAS_*, no MAESTRO_QUEUES_URL); ~~systemd~~ DONE both nodes, units
+>   pinned `forms-20260907-045139-c0f7d5c`, svc 3037/app 8107 CONFIRMED pair,
+>   /health + /healthz 200; ~~NSG~~ DONE `allow-capcom-health-forms` prio 356
+>   both NSGs (354 was node-agent); ~~Caddy~~ DONE — BOTH handles strip
+>   /forms (checklist fixed `03ef28d`: app nginx serves at root, unstripped
+>   remoteEntry 200s HTML), edge verified: /forms/api/forms/health 200 JSON,
+>   remoteEntry.js 200 JS, index served, bare /forms 301.
+> - **Remaining (operator UI, 403'd for Claude)**: capcom onboard (skip
+>   worker_types); pilot grants via grid; browser E2E per DEPLOY-CHECKLIST.md
+>   step 8.
 > - **Open findings**: Forminator `/api/chat` unauthenticated + wide CORS —
 >   deferred (Campbell): local workbench only, must close before any
 >   non-localhost exposure. Check-5↔check-6 tension: required uuid +
