@@ -160,18 +160,23 @@ router.post('/generate', async (req, res) => {
   const enrichErrors = [];
   for (let i = 0; i < schemaInputs.length; i += BATCH_SIZE) {
     const batch = schemaInputs.slice(i, i + BATCH_SIZE);
-    console.log(`[catalog] Enriching batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(schemaInputs.length / BATCH_SIZE)}...`);
-    try {
-      const results = await enrichBatch(batch);
-      for (let j = 0; j < batch.length; j++) {
-        enriched.push({ input: batch[j], enrichment: results[j] ?? {} });
+    const batchNo = Math.floor(i / BATCH_SIZE) + 1;
+    console.log(`[catalog] Enriching batch ${batchNo}/${Math.ceil(schemaInputs.length / BATCH_SIZE)}...`);
+    // Bounded retry — transient API/parse failures otherwise degrade the whole
+    // batch to empty enrichment for the full catalog lifetime.
+    let results = null;
+    for (let attempt = 1; attempt <= 3 && !results; attempt++) {
+      try {
+        results = await enrichBatch(batch);
+      } catch (err) {
+        console.error(`[catalog] batch ${batchNo} attempt ${attempt} failed: ${err.message}`);
+        if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 3000));
+        else enrichErrors.push({ batch: batch.map(s => s.blobDir), error: err.message });
       }
-    } catch (err) {
-      enrichErrors.push({ batch: batch.map(s => s.blobDir), error: err.message });
-      // Fall back: push entries with empty enrichment so we don't lose the schema
-      for (const s of batch) {
-        enriched.push({ input: s, enrichment: {} });
-      }
+    }
+    for (let j = 0; j < batch.length; j++) {
+      // Fall back after final failure: empty enrichment so we don't lose the schema
+      enriched.push({ input: batch[j], enrichment: results?.[j] ?? {} });
     }
   }
 
