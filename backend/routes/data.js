@@ -1,3 +1,8 @@
+// DEPRECATED (Phase 4, 2026-09) — local dev record store only.
+// The production record store is the Forms work surface:
+// tc-surface-forms/worker/src/routes/records.ts (POST /api/forms/records,
+// Azure `form-records` container). This router remains mounted for the local
+// workbench's ApiDocs tab; do not build on it.
 const express = require('express');
 const fs = require('fs');
 const path = require('path');

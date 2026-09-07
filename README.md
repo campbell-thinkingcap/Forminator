@@ -64,7 +64,7 @@ Forminator/
 │       ├── chat.js         # Guided form-filling assistant (/api/chat)
 │       ├── chatEdit.js     # Schema edit assistant (/api/chat/edit)
 │       ├── azure.js        # Azure Blob Storage schema loader and saver
-│       ├── data.js         # Form submission CRUD API
+│       ├── data.js         # DEPRECATED local record store (dev only) — production: tc-surface-forms records API
 │       ├── schemaRouter.js # Natural language → schema routing agent (/api/schema-router)
 │       └── catalog.js      # Skill Map — intent → schemas + Tapestry skills (/api/catalog)
 ├── frontend/

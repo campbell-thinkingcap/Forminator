@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Terminal } from 'lucide-react';
+import { Copy, Check, Terminal, AlertTriangle } from 'lucide-react';
 
 const ENDPOINTS = [
   { method: 'GET',    suffix: '',     description: 'List all records',             body: false },
@@ -143,6 +143,10 @@ export default function ApiDocs({ schema, schemaName, apiBase }) {
         <p className="description">{schema.description}</p>
         <div style={{ marginTop: '1rem', padding: '0.5rem 0.8rem', background: 'var(--diff-header-bg)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-input)', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--primary)' }}>
           Base URL: <span style={{ color: 'var(--text-main)' }}>{base}</span>
+        </div>
+        <div role="note" style={{ marginTop: '0.75rem', padding: '0.6rem 0.8rem', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid #f59e0b', borderRadius: 'var(--radius-input)', fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <AlertTriangle size={14} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '0.1rem' }} />
+          <span><span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Deprecated — do not build on these endpoints.</span> This is Forminator's local dev record store (<code>/api/data</code>). Use the production Forms record API instead (<code>POST /api/forms/records</code>).</span>
         </div>
       </div>
 
