@@ -20,7 +20,7 @@ Every leaf schema directory contains exactly three companions:
 | File | Role |
 |---|---|
 | `schema.json` | The JSON Schema definition. |
-| `sample.json` | A sample record that **must AJV-validate** against `schema.json`. |
+| `sample.json` | A sample record that **must AJV-validate** against `schema.json`. For `documentType: "collection"`, either an array of documents (each element validates) or a wrapper object holding the array. |
 | `description.md` | Human-readable explanation: what the document collects, where it is administered, where it is stored. |
 
 Authoring rules carried over from TCOV:
@@ -189,7 +189,7 @@ that still runs; **info** = suggestion.
 | 10 | `x-widget` value valid and matches the field shape (§4 matrix); `radio` > 5 options | error / warning |
 | 11 | `x-options-source: db \| app` omits `enum`/`items.enum` and carries an array `x-options-preview` | error / warning |
 | 12 | Trio complete: `sample.json` + `description.md` supplied alongside the schema | info |
-| 13 | `sample.json` AJV-validates against the schema (draft resolved from `$schema`) | error |
+| 13 | `sample.json` AJV-validates against the schema (draft resolved from `$schema`). Collection arrays validate element-wise; findings carry the element index (`/1/…`) | error |
 | 14 | `$schema` present and declares 2020-12 (draft-07 tolerated, flagged) | warning |
 
 **Score:** `100 − 15×errors − 5×warnings − 1×infos`, clamped to `[0, 100]`.

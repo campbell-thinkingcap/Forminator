@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Notification Rule Collection",
+  "description": "Collects branch notification rules. Each document in the collection is one rule: which event triggers it, which channels deliver it, and whether it is active.",
+  "documentType": "collection",
+  "type": "object",
+  "required": ["label", "event", "channels"],
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "Human-readable name of the notification rule, shown in the admin list."
+    },
+    "event": {
+      "type": "string",
+      "description": "Event that triggers the rule: 'enrollment' fires when a learner enrolls, 'completion' when they finish an activity, 'expiry' when a certification nears expiry.",
+      "enum": ["enrollment", "completion", "expiry"]
+    },
+    "channels": {
+      "type": "array",
+      "description": "Delivery channels for the notification: 'email' sends mail, 'sms' sends a text message.",
+      "items": { "type": "string", "enum": ["email", "sms"] }
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether the rule is currently active.",
+      "default": true
+    }
+  }
+}

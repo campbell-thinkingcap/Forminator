@@ -1,0 +1,14 @@
+[
+  {
+    "label": "Enrollment welcome",
+    "event": "enrollment",
+    "channels": ["email"],
+    "enabled": true
+  },
+  {
+    "label": "Expiry reminder",
+    "event": "expiry",
+    "channels": ["email", "sms"],
+    "enabled": "yes"
+  }
+]

@@ -93,17 +93,33 @@ function lintTrio({ schema, sample, descriptionMd } = {}) {
   // Note: schema-supplied regexes (pattern/patternProperties) run raw under Ajv —
   // a catastrophic-backtracking pattern could stall the event loop. Accepted risk
   // for a local dev tool; revisit if this endpoint is ever exposed beyond it.
+  // documentType: "collection" has two sample shapes in the corpus: a bare
+  // array of documents (metadata-fields — validate element-wise, findings carry
+  // the element index) and a wrapper object holding the array (branch-reports —
+  // whole-sample validation descends into the array on its own).
   if (typeof sample !== 'undefined') {
     try {
       const ajv = makeAjv(declared);
       const { $id, $schema, ...schemaCopy } = schema; // avoid caching collisions / meta refs
       const validate = ajv.compile(schemaCopy);
-      const valid = validate(sample);
-      if (!valid) {
-        const first = (validate.errors || []).slice(0, 3)
-          .map(e => `${e.instancePath || '/'} ${e.message}`).join('; ');
+      const elementWise = schema.documentType === 'collection' && Array.isArray(sample);
+      const docs = elementWise ? sample : [sample];
+      const errors = [];
+      let total = 0;
+      for (let i = 0; i < docs.length; i++) {
+        if (!validate(docs[i])) {
+          // validate.errors is per-call mutable — copy out immediately
+          for (const e of validate.errors || []) {
+            total++;
+            if (errors.length < 3) { // count everything, keep little
+              errors.push(`${elementWise ? `/${i}` : ''}${e.instancePath || '/'} ${e.message}`);
+            }
+          }
+        }
+      }
+      if (total) {
         add('sample-validates', 'error', '(root)',
-          `sample.json fails validation (${validate.errors.length} error(s)): ${first}`);
+          `sample.json fails validation (${total} error(s)): ${errors.join('; ')}`);
       }
     } catch (err) {
       add('sample-validates', 'error', '(root)', `schema fails to compile: ${err.message}`);
