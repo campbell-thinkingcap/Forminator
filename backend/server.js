@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 const dataRouter = require('./routes/data');
 const azureRouter = require('./routes/azure');
 const chatRouter = require('./routes/chat');
@@ -64,23 +63,6 @@ app.get('/api/schemas/:name', (req, res) => {
     } catch (parseErr) {
       res.status(500).json({ error: 'Failed to parse schema JSON' });
     }
-  });
-});
-
-// Proxy to TCOV schema registry — forwards Authorization header from client
-app.get('/api/tcov/schemas', (req, res) => {
-  const tcovBase = process.env.TCOV_API_BASE || 'https://tcov.thinkingcap.com/api';
-  const reqOptions = { headers: {} };
-  if (req.headers['authorization']) {
-    reqOptions.headers['Authorization'] = req.headers['authorization'];
-  }
-
-  https.get(`${tcovBase}/schemas`, reqOptions, (tcovRes) => {
-    res.status(tcovRes.statusCode);
-    res.setHeader('Content-Type', 'application/json');
-    tcovRes.pipe(res);
-  }).on('error', (err) => {
-    res.status(502).json({ error: `Upstream error: ${err.message}` });
   });
 });
 
