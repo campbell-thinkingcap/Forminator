@@ -193,11 +193,20 @@ Scaffold: `bash tc-surface-template/scaffold.sh forms` → repo `tc-surface-form
 >   tentative ports 3037/8107). Template: sync-bridge CONSUMERS + port row.
 > - **Images**: `surface-forms-svc`/`surface-forms-app` built to patchacr
 >   (tag `forms-<date>-<sha>` + `:latest`); NO dataworker build.
-> - **Operator-gated (pending Douglas)**: apply sql/029 (status unknown —
->   credential not on the build box) + sql/031; phoenix env SCHEMAS_* +
->   redeploy ≥ `1de6ffc`; forms.env on CC+CE; systemd; NSG; Caddy; capcom
->   onboard (skip worker_types); pilot grants via grid; browser E2E per
->   DEPLOY-CHECKLIST.md step 8.
+> - **Update 2026-09-07 PM**: sql/029+031 **APPLIED** to `tc-other-pg/mothership`
+>   (path found: az CLI identity `radupog@hotmail.com` = the AAD user owning the
+>   sibling surface tables; `az account get-access-token --resource-type oss-rdbms`
+>   as the PG password — mothership_app itself has no DDL, 42501). Revert-tested
+>   (drop+delete → re-apply clean) and grant-verified as mothership_app from the
+>   live container (SELECT/UPDATE/DELETE ok; INSERT probe got expected 23503 FK
+>   violation, not 42501). Revert script: `/media/shared/For Douglas/forms-029-031-revert.sql`.
+>   console-api redeployed to `1de6ffc` by doug 06:15Z (patch.console_deploy_job)
+>   — but `SCHEMAS_STORAGE_ACCOUNT`/`SCHEMAS_STORAGE_KEY` are STILL ABSENT from
+>   the container env: phoenix catalog loads degrade until set.
+> - **Operator-gated (pending Douglas)**: ~~apply sql/029 + sql/031~~ DONE;
+>   phoenix env SCHEMAS_* (redeploy ~~≥ `1de6ffc`~~ DONE 06:15Z); forms.env on
+>   CC+CE; systemd; NSG; Caddy; capcom onboard (skip worker_types); pilot
+>   grants via grid; browser E2E per DEPLOY-CHECKLIST.md step 8.
 > - **Open findings**: Forminator `/api/chat` unauthenticated + wide CORS —
 >   deferred (Campbell): local workbench only, must close before any
 >   non-localhost exposure. Check-5↔check-6 tension: required uuid +
