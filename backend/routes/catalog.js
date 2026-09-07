@@ -64,13 +64,24 @@ Return ONLY a JSON array with ${batch.length} objects. No explanation.`;
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 3000,
+    // 8000: the thinking block shares this budget — 3000 truncated the JSON
+    // array mid-stream on real 15-schema batches (deterministic parse error).
+    max_tokens: 8000,
     messages: [{ role: 'user', content: prompt }],
   });
 
   const raw = (response.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) — take the text block */;
   const match = raw.match(/\[[\s\S]*\]/);
-  return JSON.parse(match ? match[0] : raw);
+  try {
+    return JSON.parse(match ? match[0] : raw);
+  } catch (err) {
+    // Truncated array (stop_reason max_tokens): salvage the complete objects
+    // rather than lose the whole batch.
+    const salvaged = (match ? match[0] : raw).replace(/,\s*\{[^{}]*$/, '') + ']';
+    const parsed = JSON.parse(salvaged); // throws → caller's retry/fallback
+    console.warn(`[catalog] enrichBatch salvaged ${parsed.length}/${batch.length} entries after parse failure (${err.message})`);
+    return parsed;
+  }
 }
 
 // Enrich a single catalog entry with CapGPT KB context and glossary terms
