@@ -1,6 +1,6 @@
 # Forminator → ThinkingCap Lab Integration Plan
 
-**Status:** Phase 0 ✅ `3a2ad43` · Phase 1 ✅ `6ac5145` · Phase 2 ✅ (tc-surface-forms, standalone-verified) · Phase 3 ✅ (phoenix `04fe472` + tc-lab `c4c04f1`, 2026-09-02) · Phase 4 pending
+**Status:** Phase 0 ✅ `3a2ad43` · Phase 1 ✅ `6ac5145` · Phase 2 ✅ (tc-surface-forms, standalone-verified) · Phase 3 ✅ (phoenix `04fe472` + tc-lab `c4c04f1`, 2026-09-02) · Phase 4 ✅ code complete 2026-09-07 (operator deploy pending)
 
 **Goal (Campbell's two gaps):**
 1. **Schema authoring standard** — how to write JSON Schemas so an AI asks the right questions and enums project to the right widget (radio / single-choice / dropdown / checkbox).
@@ -151,6 +151,60 @@ Scaffold: `bash tc-surface-template/scaffold.sh forms` → repo `tc-surface-form
 ---
 
 ## Phase 4 — Hardening + cutover
+
+> **DONE 2026-09-07 (code + data; operator deploy pending).** Forminator
+> `1734840`/`785756f`/`df8c848`/`1c5b3c7`/`2ad8dcb`/`aa52918`, tc-surface-forms
+> `dd50e2a`/`96d78e4`/`c0f7d5c`, tc-surface-template `cbb7100`, phoenix
+> `3e33a4d` + `1de6ffc` — all pushed (Forminator→origin, surfaces→srv,
+> phoenix→origin). tcov `64c1375` local on `node_dev` (not pushed).
+>
+> - **Proxy retired** (`1734840`): `/api/tcov/schemas` had zero callers — route,
+>   `https` require, and `TCOV_API_BASE` compose var deleted.
+> - **data.js deprecated** (`785756f`): header pointer to tc-surface-forms
+>   records; ApiDocs amber "Deprecated — do not build on these endpoints"
+>   banner; mount kept for the local workbench.
+> - **Lint Check 13 element-wise** (`df8c848`): `documentType:"collection"`
+>   array-samples validate per element with `/i` index prefixes; wrapper-style
+>   collections (branch-reports) keep whole-sample validation. Error list
+>   capped (3 rendered / N counted). New fixtures lint-collection{,-broken};
+>   standard §1/§6 amended.
+> - **Sample drift fixed in Azure**: branch-reports `audienceRoleIds`→
+>   `audienceList`; metadata-fields ×3 docs `customActivities:false→[]`,
+>   `anonymizeAfter:null→""`; basics sample unwrapped from a 2-element array +
+>   stale enum values repaired. All re-downloaded and lint-verified 0E.
+> - **Pilot x-widget adoption (Campbell: pilot set only)**: metadata-fields
+>   (25 annotations), basics (20), nomenclature (3) — x-source/x-prompt/
+>   x-order/x-group; x-widget needed nowhere (defaults correct). Uploaded to
+>   Azure, round-trip verified.
+> - **Catalog regenerated** (was 2026-04-09): 165 entries, 0 errors,
+>   entity/keywords/kbContext 165/165. Three live bugs fixed to get there:
+>   thinking-block trap ×7 sites (`1c5b3c7`), silent batch failure + bounded
+>   retry (`2ad8dcb`), max_tokens 3000 truncation + salvage (`aa52918`).
+>   CAPGPT_URL in backend/.env repointed to api-prod2.capgpt.thinkingcap.com
+>   (func-prod host is NXDOMAIN; .env is local-only).
+> - **phoenix** (`3e33a4d`): sql/031 seeds forms as explicit `'manual'` pilot
+>   rule (NOT copy-from-badges — 020 made badges `'everyone'`); README
+>   migrations 021–031; smoke `--await-refresh`; `[formsCatalog] revalidated`
+>   log. `1de6ffc`: smoke asserts revalidation, not content-diff (false-FAIL
+>   fixed; verified live with a same-bytes re-upload).
+> - **tc-surface-forms deploy prep**: stale CI removed; README (incl. the
+>   registered-without-data-plane design note — Campbell decision), worker
+>   `.env.example`, `docs/DEPLOY-CHECKLIST.md` (env-recipe gap callout,
+>   tentative ports 3037/8107). Template: sync-bridge CONSUMERS + port row.
+> - **Images**: `surface-forms-svc`/`surface-forms-app` built to patchacr
+>   (tag `forms-<date>-<sha>` + `:latest`); NO dataworker build.
+> - **Operator-gated (pending Douglas)**: apply sql/029 (status unknown —
+>   credential not on the build box) + sql/031; phoenix env SCHEMAS_* +
+>   redeploy ≥ `1de6ffc`; forms.env on CC+CE; systemd; NSG; Caddy; capcom
+>   onboard (skip worker_types); pilot grants via grid; browser E2E per
+>   DEPLOY-CHECKLIST.md step 8.
+> - **Open findings**: Forminator `/api/chat` unauthenticated + wide CORS —
+>   deferred (Campbell): local workbench only, must close before any
+>   non-localhost exposure. Check-5↔check-6 tension: required uuid +
+>   x-source:app trades one warning for the other (standard §4 vs §6.6 —
+>   product note). nomenclature trio still lacks sample.json/description.md
+>   in Azure. `~/Projects/tcov/schemas/settings/metadata-fields` is a stale
+>   incomplete draft (different root shape) — left alone.
 
 - Regenerate `schema-catalog.json` in Forminator after x-widget adoption; confirm phoenix ETag cache picks it up within TTL.
 - Retire Forminator's dead `/api/tcov/schemas` proxy; mark `data.js` deprecated (header pointer to tc-surface-forms records). Forminator keeps: schema workbench, edit assistant, lint, catalog generator.
