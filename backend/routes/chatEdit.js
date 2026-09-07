@@ -126,7 +126,7 @@ router.post('/', async (req, res) => {
       messages: apiMessages
     });
 
-    const rawText = response.content[0].text.trim();
+    const rawText = (response.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) — take the text block */;
 
     let parsed;
     try {
@@ -198,7 +198,7 @@ async function lintNarrative(schema, { score, counts, findings }) {
         content: `Schema: ${schema.title ?? '(untitled)'}\nScore: ${score} (${counts.errors} errors, ${counts.warnings} warnings, ${counts.infos} infos)\nFindings:\n${JSON.stringify(findings, null, 2)}`
       }]
     });
-    return response.content[0].text.trim();
+    return (response.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) — take the text block */;
   } catch (err) {
     console.error('Lint narrative error:', err.message);
     return undefined;

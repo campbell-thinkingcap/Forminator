@@ -68,7 +68,7 @@ Return ONLY a JSON array with ${batch.length} objects. No explanation.`;
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const raw = response.content[0].text.trim();
+  const raw = (response.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) — take the text block */;
   const match = raw.match(/\[[\s\S]*\]/);
   return JSON.parse(match ? match[0] : raw);
 }
@@ -358,7 +358,7 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const raw = response.content[0].text.trim();
+    const raw = (response.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) — take the text block */;
     const match = raw.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(match ? match[0] : raw);
     let matches = parsed.matches ?? [];
@@ -463,7 +463,7 @@ Return up to 5 matches, most relevant first. Return ONLY valid JSON.`;
         max_tokens: 1024,
         messages: [{ role: 'user', content: routingPrompt }],
       });
-      const raw = routingRes.content[0].text.trim();
+      const raw = (routingRes.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) */;
       const objMatch = raw.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(objMatch ? objMatch[0] : raw);
       const matches = parsed.matches ?? [];
@@ -521,7 +521,7 @@ RIGHT: "Could you describe what you're trying to set up in a bit more detail?"`;
       system: systemPrompt,
       messages: history,
     });
-    const message = chatRes.content[0].text.trim();
+    const message = (chatRes.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) */;
     res.json({ message, schemas: [] });
   } catch (err) {
     console.error('[skill-chat] conversation generation failed:', err.message);

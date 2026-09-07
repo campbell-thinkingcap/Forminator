@@ -79,7 +79,7 @@ Rules:
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const rawText = response.content[0].text.trim();
+    const rawText = (response.content.find(b => b.type === 'text')?.text ?? '').trim() /* content may lead with non-text blocks (e.g. thinking) — take the text block */;
 
     let parsed;
     try {
